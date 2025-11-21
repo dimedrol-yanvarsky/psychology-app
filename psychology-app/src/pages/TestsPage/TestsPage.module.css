@@ -1,0 +1,57 @@
+.pageContainer {
+    min-height: calc(100vh - 80px);
+    background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+    padding: 2rem;
+}
+
+.content {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.content h1 {
+    color: #2e7d32;
+    margin-bottom: 1rem;
+}
+
+.card {
+    background: #f1f8e9;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #4caf50;
+    margin-top: 1rem;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.testCard {
+    background: #f1f8e9;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 2px solid #c8e6c9;
+    text-align: center;
+}
+
+.startButton {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: background-color 0.3s;
+}
+
+.startButton:hover {
+    background-color: #45a049;
+}

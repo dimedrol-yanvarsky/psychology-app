@@ -1,0 +1,21 @@
+.dashboardCard {
+    background: #f1f8e9;
+    padding: 2rem;
+    border-radius: 8px;
+    border: 2px solid #c8e6c9;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+    display: block;
+}
+
+.dashboardCard:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border-color: #4caf50;
+}
+
+.dashboardCard h3 {
+    color: #2e7d32;
+    margin-bottom: 0.5rem;
+}

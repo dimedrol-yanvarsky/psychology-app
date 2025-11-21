@@ -1,0 +1,102 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    height: 80px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(15px);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.logoContainer {
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    width: 90px;
+    border-radius: 5px;
+    padding: 5px;
+    filter: brightness(130%);
+}
+
+.nav {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.navLink {
+    color: white;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    border: 2px solid transparent;
+    background: rgba(255, 255, 255, 0.1); /* Полупрозрачный фон */
+}
+
+.navLink:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(5px);
+}
+
+.navLink.active {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(5px);
+}
+
+.homeLink {
+    font-size: 1.5rem;
+    padding: 0.3rem 0.8rem;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.logoutButton {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    backdrop-filter: blur(5px);
+}
+
+.logoutButton:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .header {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 1rem;
+        background: rgba(
+            76,
+            175,
+            80,
+            0.95
+        ); /* Меньше прозрачности на мобильных */
+    }
+
+    .nav {
+        gap: 1rem;
+    }
+
+    .navLink {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+    }
+}
