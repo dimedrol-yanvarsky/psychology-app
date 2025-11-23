@@ -6,7 +6,7 @@
 
 .App {
     min-height: 100vh;
-    background-image: url("./pictures/forest1-2.jpg");
+    /* background-image: url("./pictures/forest1-2.jpg"); */
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center;

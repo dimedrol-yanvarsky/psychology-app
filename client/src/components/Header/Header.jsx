@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import styles from "./Header.module.css";
-import logo from "../../pictures/heart-icon-2.png"; // Предполагается, что логотип лежит в папке assets
+import logo from "../../pictures/logo.png"; // Предполагается, что логотип лежит в папке assets
 
 const Header = () => {
     const navigate = useNavigate();

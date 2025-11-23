@@ -1,8 +1,8 @@
 .dashboardCard {
     background: #f1f8e9;
     padding: 2rem;
-    border-radius: 8px;
-    border: 2px solid #c8e6c9;
+    border-radius: 0.5rem;
+    border: 0.125rem solid #c8e6c9;
     text-decoration: none;
     color: inherit;
     transition: all 0.3s ease;
@@ -10,8 +10,8 @@
 }
 
 .dashboardCard:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-0.3125rem);
+    box-shadow: 0 0.3125rem 0.9375rem rgba(0, 0, 0, 0.1);
     border-color: #4caf50;
 }
 

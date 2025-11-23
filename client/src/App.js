@@ -13,6 +13,7 @@ import TestsPage from "./pages/TestsPage/TestsPage";
 import RegistrationPage from "./pages/RegistrationPage/RegistrationPage";
 import "./App.css";
 import ReviewsPage from "./pages/ReviewsPage/ReviewsPage";
+import Terminal from "./components/Terminal/Terminal";
 
 // Компонент для защищенных маршрутов
 // const ProtectedRoute = ({ children }) => {
@@ -78,6 +79,14 @@ function App() {
                         element={
                             // <ProtectedRoute>
                             <ReviewsPage />
+                            // </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/terminal"
+                        element={
+                            // <ProtectedRoute>
+                            <Terminal />
                             // </ProtectedRoute>
                         }
                     />

@@ -1,0 +1,737 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
+/* terminal.module.css */
+:global(body) {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        sans-serif;
+    background: radial-gradient(
+        circle at top left,
+        #1f2937 0,
+        #020617 45%,
+        #020617 100%
+    );
+    color: #e5e7eb;
+}
+
+.app {
+    min-height: 100vh;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+        Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.window {
+    width: min(77.5rem, 100%);
+    height: 40rem;
+    border-radius: 1.125rem;
+    background: radial-gradient(circle at top left, #111827 0, #020617 60%);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 0.0625rem solid rgba(148, 163, 184, 0.16);
+    animation: fadeInUp 0.5s ease-out;
+}
+
+/* ВЕРХНЯЯ ПАНЕЛЬ */
+
+.topBar {
+    height: 3.25rem;
+    padding: 0 1.125rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 0.0625rem solid rgba(15, 23, 42, 1);
+    backdrop-filter: blur(1.125rem);
+    background: linear-gradient(
+        to bottom,
+        rgba(15, 23, 42, 0.92),
+        rgba(15, 23, 42, 0.86)
+    );
+}
+
+.topBarLeft {
+    display: flex;
+    align-items: center;
+}
+
+.pill {
+    border-radius: 62.4375rem;
+    border: 0.0625rem solid transparent;
+    padding: 0.25rem 0.625rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    line-height: 1;
+    cursor: default;
+    background: rgba(15, 23, 42, 0.85);
+    color: #cbd5f5;
+    transition: background 0.18s ease, transform 0.18s ease,
+        border-color 0.18s ease;
+}
+
+.pillActive {
+    background: rgba(16, 185, 129, 0.14);
+    border-color: rgba(34, 197, 94, 0.9);
+    color: #bbf7d0;
+}
+
+.pill + .pill {
+    margin-left: 0.5rem;
+}
+
+.pillIcon {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 62.4375rem;
+    border: 0.125rem solid rgba(148, 163, 184, 0.7);
+}
+
+.pillAdd {
+    margin-left: 0.5rem;
+    width: 1.625rem;
+    height: 1.625rem;
+    border-radius: 62.4375rem;
+    border: 0.0625rem dashed rgba(75, 85, 99, 0.7);
+    background: transparent;
+    color: #9ca3af;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.125rem;
+    padding-bottom: 0.125rem;
+    transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.windowControls {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.controlIcon {
+    width: 1.625rem;
+    height: 1.625rem;
+    border-radius: 62.4375rem;
+    border: 0.0625rem solid rgba(55, 65, 81, 0.8);
+    background: radial-gradient(
+        circle at 30% 20%,
+        rgba(148, 163, 184, 0.35),
+        rgba(15, 23, 42, 1)
+    );
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.controlIcon::before {
+    content: "";
+    position: absolute;
+    inset: 0.4375rem;
+    border-radius: inherit;
+    border: 0.0625rem solid rgba(15, 23, 42, 0.85);
+}
+
+.controlIcon:hover {
+    border-color: rgba(148, 163, 184, 0.9);
+}
+
+.controlClose {
+    background: radial-gradient(
+        circle at 30% 20%,
+        rgba(239, 68, 68, 0.85),
+        rgba(127, 29, 29, 1)
+    );
+}
+
+/* КОНТЕНТ */
+
+.content {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+}
+
+/* ТЕРМИНАЛ */
+
+.terminalColumn {
+    flex: 1.7;
+    border-right: 0.0625rem solid rgba(15, 23, 42, 1);
+    background: #020617;
+    display: flex;
+    flex-direction: column;
+}
+
+.terminalColumn,
+.terminalColumn * {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+        Consolas, "Liberation Mono", "Courier New", monospace !important;
+}
+
+.terminalToolbar {
+    height: 2.375rem;
+    padding: 0 1.125rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 0.0625rem solid rgba(15, 23, 42, 1);
+    font-size: 0.8125rem;
+    color: #6b7280;
+}
+
+.connectionText {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+        Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.connectionBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 62.4375rem;
+    background: rgba(15, 23, 42, 0.9);
+}
+
+.connectionStatusDot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 62.4375rem;
+    background: #22c55e;
+}
+
+.toolbarChip {
+    padding: 0.25rem 0.625rem;
+    border-radius: 62.4375rem;
+    border: 0.0625rem solid rgba(55, 65, 81, 0.9);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #9ca3af;
+}
+
+.terminalBody {
+    flex: 1;
+    padding: 1rem 1.125rem 1.125rem;
+    overflow: auto;
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+        Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: #22c55e;
+}
+
+.terminalLines {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* лёгкое свечение текста */
+.terminalBody::selection,
+.terminalText::selection,
+.terminalLine::selection {
+    background: rgba(34, 197, 94, 0.25);
+}
+
+.terminalLine {
+    margin: 0;
+    white-space: pre-wrap;
+    color: inherit;
+}
+
+.command {
+    color: #7dd3fc;
+    font-weight: 600;
+    background: rgba(125, 211, 252, 0.12);
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.375rem;
+}
+
+.windowLight .command {
+    color: #1d4ed8;
+    background: rgba(59, 130, 246, 0.16);
+}
+
+.promptLine {
+    margin-top: 0.5rem;
+    color: #22c55e;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* мигающий курсор */
+.cursor {
+    width: 0.5rem;
+    height: 1rem;
+    margin-left: 0.375rem;
+    border-radius: 0.125rem;
+    background: #22c55e;
+    animation: cursorBlink 1s steps(2, start) infinite;
+}
+
+.windowLight {
+    background: linear-gradient(135deg, #e8edf1, #dee7ed);
+    border: 0.0625rem solid #c9d6df;
+    color: #0f172a;
+}
+
+.windowLight .topBar {
+    border-bottom: 0.0625rem solid #cbd5e1;
+    background: linear-gradient(
+        to bottom,
+        rgba(240, 245, 250, 0.96),
+        rgba(231, 237, 244, 0.92)
+    );
+}
+
+.windowLight .pill {
+    background: rgba(255, 255, 255, 0.78);
+    color: #1f2937;
+    border-color: #cbd5e1;
+}
+
+.windowLight .pillActive {
+    background: rgba(59, 130, 246, 0.14);
+    border-color: #93c5fd;
+    color: #0f172a;
+}
+
+.windowLight .windowControls {
+    background: rgba(255, 255, 255, 0.68);
+    border: 0.0625rem solid rgba(203, 213, 225, 0.9);
+}
+
+.windowLight .controlIcon {
+    border: 0.0625rem solid #cbd5e1;
+    background: radial-gradient(
+        circle at 30% 20%,
+        rgba(255, 255, 255, 0.7),
+        rgba(226, 232, 240, 0.9)
+    );
+}
+
+.windowLight .controlClose {
+    background: radial-gradient(
+        circle at 30% 20%,
+        rgba(248, 113, 113, 0.85),
+        rgba(185, 28, 28, 0.9)
+    );
+}
+
+.windowLight .content {
+    background: transparent;
+}
+
+.windowLight .terminalColumn {
+    border-right: 0.0625rem solid #cbd5e1;
+    background: #eef2f6;
+}
+
+.windowLight .terminalToolbar {
+    border-bottom: 0.0625rem solid #cbd5e1;
+    color: #6b7280;
+}
+
+.windowLight .connectionBadge {
+    background: #d8e3ec;
+    border: 0.0625rem solid #c1d0db;
+}
+
+.windowLight .connectionStatusDot {
+    background: #16a34a;
+}
+
+.windowLight .toolbarChip {
+    border-color: #cbd5e1;
+    color: #475569;
+}
+
+.windowLight .terminalBody {
+    color: #0f172a;
+}
+
+.windowLight .promptLine {
+    color: #0f172a;
+}
+
+.windowLight .cursor {
+    background: rgba(6, 84, 209, 0.16);
+}
+
+.windowLight .sidebarColumn {
+    background: #f4f6f9;
+}
+
+.windowLight .sidebarPanel {
+    background: #ffffff;
+    border: 0.0625rem solid #dbe3ea;
+}
+
+.windowLight .roundIcon {
+    border: 0.0625rem solid #cbd5e1;
+    background: radial-gradient(
+        circle at 30% 20%,
+        rgba(237, 242, 247, 0.9),
+        rgba(226, 232, 240, 0.95)
+    );
+}
+
+.windowLight .roundIconActive {
+    background: radial-gradient(
+        circle at 30% 20%,
+        rgba(59, 130, 246, 0.18),
+        rgba(16, 185, 129, 0.18)
+    );
+    border-color: #94a3b8;
+}
+
+.windowLight .sidebarTitle,
+.windowLight .sectionHeading {
+    color: #0f172a;
+}
+
+.windowLight .sidebarSubTitle {
+    color: #475569;
+}
+
+.windowLight .themeName {
+    color: #0f172a;
+}
+
+.windowLight .themeMeta {
+    color: #475569;
+}
+
+.windowLight .themeCard {
+    background: #ffffff;
+    border: 0.0625rem solid #dbe3ea;
+}
+
+.windowLight .themeCardInactive:hover {
+    border-color: #cbd5e1;
+    background: #f4f6f9;
+}
+
+.windowLight .themeCardActive {
+    background: rgba(59, 130, 246, 0.12);
+    border-color: #60a5fa;
+}
+
+.windowLight .windowControls {
+    background: transparent;
+    border-color: transparent;
+}
+
+.previewBarLightPrimary {
+    background: rgba(59, 130, 246, 0.8);
+}
+
+.previewBarLightSecondary {
+    background: rgba(148, 163, 184, 0.9);
+}
+
+.previewBarLightAccent {
+    background: rgba(16, 185, 129, 0.65);
+}
+
+@media (min-width: 100rem) {
+    .app {
+        padding: 4rem;
+    }
+
+    .window {
+        width: min(110rem, 94vw);
+        height: 57.5rem;
+    }
+
+    .terminalBody {
+        font-size: 1rem;
+    }
+
+    .terminalToolbar {
+        height: 3.25rem;
+        padding: 0 1.75rem;
+    }
+
+    .sidebarPanel {
+        padding: 1.375rem 1.375rem 1rem;
+    }
+
+    .pill {
+        padding: 0.4375rem 1rem;
+        font-size: 0.9375rem;
+    }
+
+    .controlIcon,
+    .roundIcon,
+    .roundIconGhost {
+        width: 2.125rem;
+        height: 2.125rem;
+    }
+
+    .roundIconIcon,
+    .icon {
+        width: 1.125rem;
+        height: 1.125rem;
+    }
+
+    .themeCard {
+        padding: 0.875rem 0.875rem;
+    }
+
+    .toolbarChip {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+    }
+
+    .terminalLines {
+        gap: 0.375rem;
+    }
+}
+
+/* ПРАВАЯ ПАНЕЛЬ */
+
+.sidebarColumn {
+    flex: 0.67;
+    background: #020617;
+    padding: 0.75rem 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebarTopIcons {
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    justify-content: flex-start;
+}
+
+.roundIcon {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 62.4375rem;
+    border: 0.0625rem solid rgba(55, 65, 81, 0.9);
+    background: radial-gradient(
+        circle at 30% 20%,
+        rgba(156, 163, 175, 0.3),
+        rgba(15, 23, 42, 1)
+    );
+    cursor: pointer;
+    transition: transform 0.18s ease, border-color 0.18s ease,
+        background 0.18s ease;
+    color: #cbd5f5;
+}
+
+.roundIcon:hover {
+    border-color: rgba(148, 163, 184, 1);
+}
+
+.roundIconActive {
+    background: radial-gradient(
+        circle at 30% 20%,
+        rgba(16, 185, 129, 0.9),
+        rgba(5, 46, 22, 1)
+    );
+    border-color: rgba(34, 197, 94, 0.95);
+}
+
+.roundIconIcon {
+    width: 0.875rem;
+    height: 0.875rem;
+    display: block;
+}
+
+.roundIcon:hover .roundIconIcon {
+    color: #e2e8f0;
+}
+
+.windowLight .roundIcon {
+    color: #0f172a;
+    border: 0.0625rem solid rgba(203, 213, 225, 0.9);
+    background: radial-gradient(
+        circle at 30% 20%,
+        rgba(237, 242, 247, 0.95),
+        rgba(226, 232, 240, 0.95)
+    );
+}
+
+.windowLight .roundIcon:hover {
+    border-color: rgba(148, 163, 184, 1);
+}
+
+.windowLight .roundIcon:hover .roundIconIcon {
+    color: #1d4ed8;
+}
+
+.sidebarPanel {
+    margin-top: 0.375rem;
+    flex: 1;
+    border-radius: 1.125rem;
+    padding: 0.875rem 0.875rem 0.5rem;
+    background: linear-gradient(
+        to bottom,
+        rgba(15, 23, 42, 1),
+        rgba(15, 23, 42, 0.96)
+    );
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebarTitleRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #e5e7eb;
+}
+
+.sidebarTitle {
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.sidebarSubTitle {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.125rem;
+}
+
+.chevron {
+    font-size: 1.25rem;
+    color: #6b7280;
+}
+
+.sectionDivider {
+    margin: 0.875rem 0 0.625rem;
+    height: 0.0625rem;
+    background: linear-gradient(
+        to right,
+        rgba(31, 41, 55, 0),
+        rgba(31, 41, 55, 1),
+        rgba(31, 41, 55, 0)
+    );
+}
+
+.sectionHeading {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #e5e7eb;
+    margin-bottom: 0.625rem;
+}
+
+.themesList {
+    margin-top: 0.125rem;
+    padding-right: 0.25rem;
+    overflow-y: auto;
+}
+
+/* карточки тем */
+
+.themeCard {
+    width: 100%;
+    border-radius: 0.875rem;
+    padding: 0.625rem 0.625rem;
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    margin-bottom: 0.5rem;
+    background: rgba(15, 23, 42, 0.9);
+    border: 0.0625rem solid rgba(31, 41, 55, 1);
+    cursor: pointer;
+}
+
+.themeCardInactive {
+    transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.themeCardInactive:hover {
+    border-color: rgba(55, 65, 81, 0.9);
+}
+
+.themeCardActive {
+    background: rgba(16, 185, 129, 0.16);
+    border-color: rgba(34, 197, 94, 0.95);
+    transition: none;
+}
+
+.themePreview {
+    width: 3.75rem;
+    height: 2.625rem;
+    border-radius: 0.625rem;
+    background: #020617;
+    border: 0.0625rem solid rgba(31, 41, 55, 1);
+    padding: 0.375rem 0.375rem 0.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.previewBar,
+.previewBarShort,
+.previewBarBottom {
+    height: 0.25rem;
+    border-radius: 62.4375rem;
+}
+
+.previewBar {
+    width: 100%;
+    background: rgba(34, 197, 94, 0.9);
+}
+
+.previewBarShort {
+    width: 70%;
+    background: rgba(148, 163, 184, 0.95);
+}
+
+.previewBarBottom {
+    width: 90%;
+    background: rgba(34, 197, 94, 0.65);
+}
+
+.themeInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.themeName {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #e5e7eb;
+}
+
+.themeMeta {
+    font-size: 0.6875rem;
+    color: #9ca3af;
+    margin-top: 0.1875rem;
+}
+
+/* АНИМАЦИИ */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes cursorBlink {
+    0%,
+    49% {
+        opacity: 1;
+    }
+    50%,
+    100% {
+        opacity: 0;
+    }
+}

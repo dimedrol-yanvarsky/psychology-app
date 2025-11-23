@@ -5,7 +5,7 @@
     padding: 1rem 2rem;
     height: 80px;
     backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(15px);
+    /* -webkit-backdrop-filter: blur(15px); */
     box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
     position: sticky;
     top: 0;
@@ -19,7 +19,7 @@
 }
 
 .logo {
-    width: 90px;
+    width: 200px;
     border-radius: 5px;
     padding: 5px;
     filter: brightness(130%);
@@ -98,5 +98,36 @@
     .navLink {
         padding: 0.4rem 0.8rem;
         font-size: 0.9rem;
+    }
+}
+
+@media (min-width: 1600px) {
+    .header {
+        padding: 1.4rem 3rem;
+        height: 110px;
+    }
+
+    .logo {
+        width: 250px;
+        padding: 10px;
+    }
+
+    .nav {
+        gap: 2.25rem;
+    }
+
+    .navLink {
+        padding: 0.85rem 1.45rem;
+        font-size: 1.1rem;
+    }
+
+    .homeLink {
+        font-size: 1.9rem;
+        padding: 0.6rem 1.1rem;
+    }
+
+    .logoutButton {
+        padding: 0.85rem 1.45rem;
+        font-size: 1.1rem;
     }
 }
