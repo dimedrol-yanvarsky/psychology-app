@@ -4,6 +4,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
+	loginPage "server/handlers/loginPage"
 	reviewsPage "server/handlers/reviewsPage" // замени server на имя модуля
 )
 
@@ -28,6 +29,14 @@ func setupRouter() *gin.Engine {
 
 		// /api/reviews/createReview
 		reviews.POST("/createReview", reviewsPage.CreateReviewHandler)
+	}
+
+	// /api/login/...
+	login := api.Group("/login")
+	{
+		login.POST("/google", loginPage.LoginWithGoogleHandler)
+		login.POST("/yandex", loginPage.LoginWithYandexHandler)
+		login.POST("/password", loginPage.LoginWithPasswordHandler)
 	}
 
 	// Здесь же можешь добавлять другие группы:

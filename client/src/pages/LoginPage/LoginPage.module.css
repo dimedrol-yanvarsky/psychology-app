@@ -152,6 +152,65 @@ form button:hover {
     background: #22632d;
 }
 
+@media (max-width: 1366px) {
+    .login_form {
+        max-width: 24rem;
+        padding: 2.25rem 1.75rem;
+    }
+
+    .login_form h3 {
+        font-size: 1.125rem;
+    }
+
+    .login_form .login_option .option a {
+        height: 3.25rem;
+        font-size: 1rem;
+        margin: 1.75rem 0 1.25rem 0;
+    }
+
+    form .input_box input {
+        height: 3.25rem;
+        font-size: 1rem;
+    }
+
+    form button {
+        height: 3.25rem;
+        font-size: 1.0625rem;
+    }
+}
+
+@media (max-width: 1024px) {
+    .login_form {
+        position: static;
+        transform: none;
+        top: auto;
+        left: auto;
+        margin: 2rem auto;
+        width: 90%;
+        max-width: 22rem;
+    }
+
+    .login_form .login_option {
+        gap: 0.75rem;
+    }
+
+    .login_form .login_option .option {
+        width: 100%;
+    }
+
+    .login_form .login_option .option a {
+        margin: 1.25rem 0;
+    }
+
+    .login_form .separator {
+        margin-bottom: 1.25rem;
+    }
+
+    form .input_box input {
+        margin-bottom: 1.25rem;
+    }
+}
+
 @media (min-width: 100rem) {
     .login_form {
         max-width: 38.75rem;

@@ -5,13 +5,14 @@
 }
 
 .App {
+    color: black;
     min-height: 100vh;
     /* background-image: url("./pictures/forest1-2.jpg"); */
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
-    background-color: #e0e0e0;
+    /* background-color: #e0e0e0; */
     /* background-color: rgba(0, 0, 0, 0.4); */
 }
 /* Общие стили для сообщений */
@@ -37,4 +38,44 @@
         transform: translateX(0);
         opacity: 1;
     }
+}
+
+.topBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 2rem;
+    gap: 1rem;
+}
+
+.topBarLeft {
+    display: flex;
+    align-items: center;
+}
+
+.topBarRight {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.adminButton {
+    padding: 0.5rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid #cdd8d1;
+    background: #f3f6f4;
+    color: #1f3a2c;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.adminButton:hover {
+    background: #e6f1e9;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+
+.adminButton:active {
+    transform: translateY(0);
 }

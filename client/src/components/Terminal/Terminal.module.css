@@ -1,19 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap");
 
 /* terminal.module.css */
-:global(body) {
-    margin: 0;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-        sans-serif;
-    background: radial-gradient(
-        circle at top left,
-        #1f2937 0,
-        #020617 45%,
-        #020617 100%
-    );
-    color: #e5e7eb;
-}
-
 .app {
     min-height: 100vh;
     padding: 1.5rem;
@@ -23,6 +10,14 @@
     box-sizing: border-box;
     font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
         Consolas, "Liberation Mono", "Courier New", monospace;
+    margin: 0;
+    background: radial-gradient(
+        circle at top left,
+        #1f2937 0,
+        #020617 45%,
+        #020617 100%
+    );
+    color: #e5e7eb;
 }
 
 .window {

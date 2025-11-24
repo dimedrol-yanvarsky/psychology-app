@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import {
     BrowserRouter as Router,
     Routes,
@@ -13,81 +13,116 @@ import TestsPage from "./pages/TestsPage/TestsPage";
 import RegistrationPage from "./pages/RegistrationPage/RegistrationPage";
 import "./App.css";
 import ReviewsPage from "./pages/ReviewsPage/ReviewsPage";
-import Terminal from "./components/Terminal/Terminal";
-
-// Компонент для защищенных маршрутов
-// const ProtectedRoute = ({ children }) => {
-//     const token = localStorage.getItem("token");
-//     return token ? children : <Navigate to="/login" />;
-// };
-
-// Компонент для публичных маршрутов (редирект если уже авторизован)
-// const PublicRoute = ({ children }) => {
-//     const token = localStorage.getItem("token");
-//     return !token ? children : <Navigate to="/dashboard" />;
-// };
+import AlertMessage from "./components/AlertMessage/AlertMessage";
 
 function App() {
+    const [statusAlert, setStatusAlert] = useState("");
+    const [messageAlert, setMessageAlert] = useState("");
+
+    const isAdmin = false;
+
+    const showAlert = (status, message) => {
+        setStatusAlert(status);
+        setMessageAlert(message);
+        setTimeout(() => {
+            setStatusAlert("");
+            setMessageAlert("");
+        }, 3000);
+
+        return true
+    };
+
     return (
         <Router>
             <div className="App">
                 <Header />
+                <div className="topBar">
+                    <div className="topBarLeft">
+                        {messageAlert && (
+                            <AlertMessage
+                                showAlert={showAlert}
+                            />
+                        )}
+                    </div>
+                    <div className="topBarRight">
+                        {isAdmin && (
+                            <>
+                                <button className="adminButton">
+                                    Редактировать 1
+                                </button>
+                                <button className="adminButton">
+                                    Редактировать 2
+                                </button>
+                                <button className="adminButton">
+                                    Редактировать 3
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
                 <Routes>
                     <Route path="/" element={<Navigate to="/login" />} />
                     <Route
                         path="/login"
                         element={
-                            // <PublicRoute>
-                            <LoginPage />
-                            // </PublicRoute>
+                            <LoginPage
+                                showAlert={showAlert}
+                            />
                         }
                     />
                     <Route
                         path="/register"
                         element={
-                            // <PublicRoute>
-                            <RegistrationPage />
-                            // </PublicRoute>
+                            <RegistrationPage
+                                statusAlert={statusAlert}
+                                setStatusAlert={setStatusAlert}
+                                messageAlert={messageAlert}
+                                setMessageAlert={setMessageAlert}
+                            />
                         }
                     />
                     <Route
-                        path="/dashboard"
+                        path="/account"
                         element={
-                            // <ProtectedRoute>
-                            <DashboardPage />
-                            // </ProtectedRoute>
+                            <DashboardPage
+                                statusAlert={statusAlert}
+                                setStatusAlert={setStatusAlert}
+                                messageAlert={messageAlert}
+                                setMessageAlert={setMessageAlert}
+                            />
                         }
                     />
                     <Route
                         path="/recommendations"
                         element={
-                            // <ProtectedRoute>
-                            <RecommendationsPage />
-                            // </ProtectedRoute>
+                            <RecommendationsPage
+                                statusAlert={statusAlert}
+                                setStatusAlert={setStatusAlert}
+                                messageAlert={messageAlert}
+                                setMessageAlert={setMessageAlert}
+                            />
                         }
                     />
                     <Route
                         path="/tests"
                         element={
-                            // <ProtectedRoute>
-                            <TestsPage />
-                            // </ProtectedRoute>
+                            <TestsPage
+                                statusAlert={statusAlert}
+                                setStatusAlert={setStatusAlert}
+                                messageAlert={messageAlert}
+                                setMessageAlert={setMessageAlert}
+                            />
                         }
                     />
                     <Route
                         path="/reviews"
                         element={
-                            // <ProtectedRoute>
-                            <ReviewsPage />
-                            // </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/terminal"
-                        element={
-                            // <ProtectedRoute>
-                            <Terminal />
-                            // </ProtectedRoute>
+                            <ReviewsPage
+                                statusAlert={statusAlert}
+                                setStatusAlert={setStatusAlert}
+                                messageAlert={messageAlert}
+                                setMessageAlert={setMessageAlert}
+                            />
                         }
                     />
                 </Routes>

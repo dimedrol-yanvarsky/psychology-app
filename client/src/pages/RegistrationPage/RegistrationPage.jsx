@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import styles from "./RegistrationPage.module.css";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { generateStrongPassword } from "./passwordGenerator";
 
 const RegistrationPage = () => {
     const [login, setLogin] = useState("");
@@ -12,48 +13,11 @@ const RegistrationPage = () => {
 
     const navigate = useNavigate();
 
-    function generateStrongPassword() {
-        // Определяем наборы символов
-        const lowercase = "abcdefghijklmnopqrstuvwxyz";
-        const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const numbers = "0123456789";
-        const specialChars = "!@#$%^&*()_+-=[]{}|;:,.<>?";
-
-        // Объединяем все символы
-        const allChars = lowercase + uppercase + numbers + specialChars;
-
-        // Генерируем случайную длину от 14 до 20 символов
-        const length = Math.floor(Math.random() * 7) + 14;
-
-        let passw = "";
-
-        // Гарантируем наличие хотя бы одного символа из каждой категории
-        passw += lowercase[Math.floor(Math.random() * lowercase.length)];
-        passw += uppercase[Math.floor(Math.random() * uppercase.length)];
-        passw += numbers[Math.floor(Math.random() * numbers.length)];
-        passw += specialChars[Math.floor(Math.random() * specialChars.length)];
-
-        // Заполняем оставшуюся длину случайными символами из всех категорий
-        for (let i = 4; i < length; i++) {
-            passw += allChars[Math.floor(Math.random() * allChars.length)];
-        }
-
-        const shuffledPassw = shuffleString(passw);
-        setPassword(shuffledPassw);
-        setPasswordRepeated(shuffledPassw);
-        // Перемешиваем символы для большей случайности
-        return true;
-    }
-
-    // Вспомогательная функция для перемешивания символов в строке
-    function shuffleString(string) {
-        const array = string.split("");
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array.join("");
-    }
+    const handleGeneratePassword = () => {
+        const newPassword = generateStrongPassword();
+        setPassword(newPassword);
+        setPasswordRepeated(newPassword);
+    };
 
     useEffect(() => {
         // Проверяем, есть ли токен в URL (после OAuth редиректа)
@@ -75,7 +39,7 @@ const RegistrationPage = () => {
         e.preventDefault();
         try {
             const response = await axios.post(
-                "http://localhost:8080/auth/login",
+                "http://localhost:8080/api/login",
                 {
                     login,
                     password,
@@ -126,7 +90,7 @@ const RegistrationPage = () => {
                     <div className={styles.password_title}>
                         <label for="password">Придумайте пароль</label>
                         <a
-                            onClick={() => generateStrongPassword()}
+                            onClick={handleGeneratePassword}
                             title="Генерирует сложный пароль"
                         >
                             Сгенерировать
@@ -150,17 +114,17 @@ const RegistrationPage = () => {
                         placeholder="Повторите пароль"
                         required
                     />
-                    <input
+                    {/* <input
                         type="checkbox"
                         checked={showPassword}
                         onChange={() => setShowPassword(!showPassword)}
                         className="checkbox-input"
-                    />
+                    /> */}
                 </div>
-                <button type="submit">Войти</button>
+                <button type="submit">Зарегистрироваться</button>
                 <p className={styles.sign_up}>
                     Есть аккаунт?{" "}
-                    <a onClick={() => navigate(`/login`)}>Авторизуйтесь</a>
+                    <Link to="/login">Авторизуйтесь</Link>
                 </p>
             </form>
         </div>

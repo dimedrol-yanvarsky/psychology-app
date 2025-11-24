@@ -1,0 +1,55 @@
+.alert {
+    min-width: 240px;
+    max-width: 460px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-weight: 600;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+    border: 1px solid transparent;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    animation: fadeIn 0.25s ease, fadeOut 0.3s ease 2.7s;
+}
+
+.alert:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.16);
+}
+
+.success {
+    background: #e7f6ec;
+    border-color: #b2e0c0;
+    color: #1b7a34;
+}
+
+.error {
+    background: #fde8e8;
+    border-color: #f5c2c2;
+    color: #b42318;
+}
+
+.message {
+    margin: 0;
+    line-height: 1.4;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+}

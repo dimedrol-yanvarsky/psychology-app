@@ -3,16 +3,17 @@ import axios from "axios";
 import styles from "./LoginPage.module.css";
 import logoYandex from "../../pictures/yandex-logo.png";
 import logoGoogle from "../../pictures/google-logo.png";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-const LoginPage = () => {
-    const [login, setLogin] = useState("");
+const LoginPage = (props) => {
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [message, setMessage] = useState("");
 
     const navigate = useNavigate();
+    const loginApiBase = "http://localhost:8080/api/login";
 
     useEffect(() => {
+        console.log("tut", props.showAlert)
         // Проверяем, есть ли токен в URL (после OAuth редиректа)
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get("token");
@@ -24,71 +25,88 @@ const LoginPage = () => {
         }
 
         if (error) {
-            setMessage(`Ошибка авторизации: ${error}`);
+            props.showAlert("error", `Ошибка авторизации: ${error}`);
         }
     }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        try {
-            const response = await axios.post(
-                "http://localhost:8080/auth/login",
-                {
-                    login,
-                    password,
-                }
-            );
 
-            if (response.data.success) {
-                localStorage.setItem("token", response.data.token);
-                window.location.href = "/dashboard";
+        if (!email || !password) {
+            props.showAlert("error", "Не оставляйте поля пустыми");
+            console.log("hi")
+            return;
+        }
+
+        try {
+            const { data } = await axios.post(`${loginApiBase}/password`, {
+                email,
+                password,
+            });
+
+            if (data.error) {
+                props.showAlert("error", data.error);
+                return;
             }
-            setMessage(response.data.message);
+
+            props.showAlert("success", data.message || "Авторизация успешна");
+            navigate(data.redirect || "/personal");
         } catch (error) {
-            setMessage("Ошибка авторизации");
+            props.showAlert("error", "Ошибка авторизации");
         }
     };
 
-    const handleOAuth = (provider) => {
-        window.location.href = `http://localhost:8080/auth/${provider}`;
+    const handleOAuth = async (provider) => {
+        try {
+            const { data } = await axios.post(`${loginApiBase}/${provider}`);
+
+            if (data.error) {
+                props.showAlert("error", data.error);
+                return;
+            }
+
+            props.showAlert("success", data.message || "Авторизация выполнена");
+            navigate(data.redirect || "/account");
+        } catch (error) {
+            props.showAlert("error", "Авторизация невозможна");
+        }
     };
 
     return (
         <div className={styles.login_form}>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
                 <h3>Авторизация</h3>
                 <div className={styles.login_option}>
                     <div className={styles.option}>
-                        <a onClick={() => handleOAuth("google")}>
+                        <Link onClick={() => handleOAuth("google")}>
                             <img src={logoGoogle} />
                             <span>Google</span>
-                        </a>
+                        </Link>
                     </div>
                     <div className={styles.option}>
-                        <a onClick={() => handleOAuth("yandex")}>
+                        <Link onClick={() => handleOAuth("yandex")}>
                             <img src={logoYandex} />
                             <span>Яндекс</span>
-                        </a>
+                        </Link>
                     </div>
                 </div>
                 <p className={styles.separator}>
                     <span>или</span>
                 </p>
                 <div className={styles.input_box}>
-                    <label for="email">Email</label>
+                    <label htmlFor="email">Email</label>
                     <input
                         type="email"
                         id="email"
-                        value={login}
-                        onChange={(e) => setLogin(e.target.value)}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         placeholder="Введите почтовый адрес"
-                        required
                     />
                 </div>
                 <div className={styles.input_box}>
                     <div className={styles.password_title}>
-                        <label for="password">Пароль</label>
-                        <a href="#">Забыли пароль?</a>
+                        <label htmlFor="password">Пароль</label>
+                        <Link to="#">Забыли пароль?</Link>
                     </div>
                     <input
                         type="password"
@@ -96,15 +114,11 @@ const LoginPage = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Введите пароль"
-                        required
                     />
                 </div>
                 <button type="submit">Войти</button>
                 <p className={styles.sign_up}>
-                    Нет аккаунта?{" "}
-                    <a onClick={() => navigate(`/register`)}>
-                        Зарегистрируйтесь
-                    </a>
+                    Нет аккаунта? <Link to="/register">Зарегистрируйтесь</Link>
                 </p>
             </form>
         </div>
