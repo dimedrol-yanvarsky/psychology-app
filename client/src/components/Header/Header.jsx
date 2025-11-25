@@ -1,80 +1,59 @@
 import React from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import styles from "./Header.module.css";
 import logo from "../../pictures/logo.png"; // Предполагается, что логотип лежит в папке assets
 
-const Header = () => {
-    const navigate = useNavigate();
+const Header = ({ isAuth }) => {
     const location = useLocation();
-    // const isLoggedIn = localStorage.getItem('token');
-    const isLoggedIn = true;
-
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        navigate("/login");
-    };
 
     const isActive = (path) => {
         return location.pathname === path ? styles.active : "";
     };
 
+    const homeTarget = isAuth ? "/dashboard" : "/login";
+    const navItems = [
+        { to: "/tree", label: "Мои эмоции"},
+        { to: "/recommendations", label: "Рекомендации" },
+        { to: "/tests", label: "Тестирования" },
+        { to: "/reviews", label: "Отзывы" },
+        {
+            to: homeTarget,
+            label: "Личный кабинет",
+            className: styles.homeLink,
+            icon: (
+                <svg
+                    className={styles.homeIcon}
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                >
+                    <path d="M12 3.5 3 11h2.5v8h5v-5h3v5h5v-8H21z" />
+                </svg>
+            ),
+        },
+    ];
+
     return (
         <header className={styles.header}>
-            <div className={styles.logoContainer}>
-                <Link to="/">
+            <div className={styles.inner}>
+                <div className={styles.logoContainer}>
                     <img src={logo} alt="Логотип" className={styles.logo} />
-                </Link>
-            </div>
+                </div>
 
-            <nav className={styles.nav}>
-                {isLoggedIn ? (
-                    <>
+                <nav className={styles.nav}>
+                    {navItems.map((item) => (
                         <Link
-                            to="/recommendations"
-                            className={`${styles.navLink} ${isActive(
-                                "/recommendations"
+                            key={item.to}
+                            to={item.to}
+                            className={`${styles.navLink} ${item.className || ""} ${isActive(
+                                item.to
                             )}`}
+                            title={item.icon ? item.label : undefined}
                         >
-                            Рекомендации
+                            {item.icon || item.label}
                         </Link>
-                        <Link
-                            to="/tests"
-                            className={`${styles.navLink} ${isActive(
-                                "/tests"
-                            )}`}
-                        >
-                            Тестирования
-                        </Link>
-                        <Link
-                            to="/reviews"
-                            className={`${styles.navLink} ${isActive(
-                                "/reviews"
-                            )}`}
-                        >
-                            Отзывы
-                        </Link>
-                        <Link
-                            to="/dashboard"
-                            className={`${styles.navLink} ${
-                                styles.homeLink
-                            } ${isActive("/dashboard")}`}
-                            title="Личный кабинет"
-                        >
-                            🏠
-                        </Link>
-                        {/* <button 
-                            onClick={handleLogout} 
-                            className={styles.logoutButton}
-                        >
-                            Выйти
-                        </button> */}
-                    </>
-                ) : (
-                    <Link to="/login" className={styles.navLink}>
-                        Войти
-                    </Link>
-                )}
-            </nav>
+                    ))}
+                </nav>
+            </div>
         </header>
     );
 };

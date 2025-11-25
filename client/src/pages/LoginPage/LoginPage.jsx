@@ -8,13 +8,15 @@ import { Link, useNavigate } from "react-router-dom";
 const LoginPage = (props) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [recoveryStep, setRecoveryStep] = useState(1);
+    const [recoveryLogin, setRecoveryLogin] = useState("");
+    const [recoveryError, setRecoveryError] = useState("");
 
     const navigate = useNavigate();
     const loginApiBase = "http://localhost:8080/api/login";
 
     useEffect(() => {
-        console.log("tut", props.showAlert)
-        // Проверяем, есть ли токен в URL (после OAuth редиректа)
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get("token");
         const error = urlParams.get("error");
@@ -29,12 +31,12 @@ const LoginPage = (props) => {
         }
     }, []);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (event) => {
+        event.preventDefault();
 
         if (!email || !password) {
             props.showAlert("error", "Не оставляйте поля пустыми");
-            console.log("hi")
+            console.log("hi");
             return;
         }
 
@@ -68,59 +70,210 @@ const LoginPage = (props) => {
             props.showAlert("success", data.message || "Авторизация выполнена");
             navigate(data.redirect || "/account");
         } catch (error) {
-            props.showAlert("error", "Авторизация невозможна");
+            props.showAlert("error", `Авторизация через ${provider} временно невозможна`);
+        }
+    };
+
+    const openRecoveryModal = () => {
+        setIsModalOpen(true);
+        setRecoveryStep(1);
+        setRecoveryLogin("");
+        setRecoveryError("");
+    };
+
+    const closeRecoveryModal = () => {
+        setIsModalOpen(false);
+        setRecoveryStep(1);
+        setRecoveryLogin("");
+        setRecoveryError("");
+    };
+
+    const handleRecoverySubmit = (event) => {
+        event.preventDefault();
+
+        if (!recoveryLogin.trim()) {
+            setRecoveryError("Введите логин или email, чтобы продолжить");
+            return;
+        }
+
+        setRecoveryError("");
+        setRecoveryStep(2);
+        if (props.showAlert) {
+            props.showAlert("success", "Инструкция по восстановлению отправлена");
         }
     };
 
     return (
-        <div className={styles.login_form}>
-            <form onSubmit={handleSubmit} noValidate>
-                <h3>Авторизация</h3>
-                <div className={styles.login_option}>
-                    <div className={styles.option}>
-                        <Link onClick={() => handleOAuth("google")}>
-                            <img src={logoGoogle} />
-                            <span>Google</span>
+        <div className={styles.page}>
+            <div className={styles.layout}>
+                <section className={styles.introCard}>
+                    <p className={styles.overline}>Доступ к рекомендациям</p>
+                    <h1 className={styles.title}>Вернитесь к спокойной работе над собой</h1>
+                    <p className={styles.subtitle}>
+                        Сохраняем ваш прогресс, подборки и результаты тестов. Войдите, чтобы
+                        продолжить работу с рекомендациями и личным кабинетом.
+                    </p>
+                    <div className={styles.pills}>
+                        <span className={styles.pill}>Безопасный вход</span>
+                        <span className={styles.pill}>Поддержка 24/7</span>
+                        <span className={styles.pill}>Синхронизация данных</span>
+                    </div>
+                </section>
+
+                <div className={styles.loginCard}>
+                    <div className={styles.loginHeader}>
+                        <span className={styles.badge}>Авторизация</span>
+                        <div>
+                            <h3 className={styles.cardTitle}>Войдите любым удобным способом</h3>
+                            <p className={styles.cardSubtitle}>
+                                Используйте корпоративный Google или Яндекс, либо продолжите по email.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className={styles.oauthRow}>
+                        <button
+                            type="button"
+                            className={styles.oauthButton}
+                            onClick={() => handleOAuth("google")}
+                        >
+                            <img src={logoGoogle} alt="Google" />
+                            <span>Войти через Google</span>
+                        </button>
+                        <button
+                            type="button"
+                            className={styles.oauthButton}
+                            onClick={() => handleOAuth("yandex")}
+                        >
+                            <img src={logoYandex} alt="Яндекс" />
+                            <span>Войти через Яндекс</span>
+                        </button>
+                    </div>
+
+                    <div className={styles.divider}>
+                        <span>или авторизация по почте</span>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className={styles.form} noValidate>
+                        <label className={styles.label} htmlFor="email">
+                            Email
+                        </label>
+                        <input
+                            className={styles.input}
+                            type="email"
+                            id="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Введите почтовый адрес"
+                        />
+
+                        <div className={styles.passwordRow}>
+                            <label className={styles.label} htmlFor="password">
+                                Пароль
+                            </label>
+                            <Link
+                                to="#"
+                                className={styles.linkButton}
+                                onClick={(event) => {
+                                    event.preventDefault();
+                                    openRecoveryModal();
+                                }}
+                            >
+                                Забыли пароль?
+                            </Link>
+                        </div>
+                        <input
+                            className={styles.input}
+                            type="password"
+                            id="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Введите пароль"
+                        />
+
+                        <button type="submit" className={styles.primaryButton}>
+                            Войти
+                        </button>
+                    </form>
+
+                    <p className={styles.footerText}>
+                        Нет аккаунта?{" "}
+                        <Link to="/register" className={styles.linkButton}>
+                            Зарегистрируйтесь
                         </Link>
-                    </div>
-                    <div className={styles.option}>
-                        <Link onClick={() => handleOAuth("yandex")}>
-                            <img src={logoYandex} />
-                            <span>Яндекс</span>
-                        </Link>
+                    </p>
+                </div>
+            </div>
+
+            {isModalOpen && (
+                <div className={styles.modalOverlay} onClick={closeRecoveryModal}>
+                    <div
+                        className={styles.modal}
+                        onClick={(event) => event.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                    >
+                        <button
+                            type="button"
+                            className={styles.modalClose}
+                            onClick={closeRecoveryModal}
+                            aria-label="Закрыть модальное окно"
+                        >
+                            ×
+                        </button>
+                        {/* <p className={styles.modalOverline}>Модальное окно</p> */}
+                        <h4 className={styles.modalTitle}>Восстановление пароля</h4>
+                        <div className={styles.stepper}>
+                            <div className={styles.stepLine}>
+                                <div
+                                    className={styles.stepLineFill}
+                                    style={{ width: recoveryStep === 2 ? "100%" : "50%" }}
+                                />
+                            </div>
+                            <div className={styles.stepDots}>
+                                {[1, 2].map((step) => (
+                                    <div
+                                        key={step}
+                                        className={`${styles.stepDot} ${
+                                            recoveryStep >= step ? styles.stepDotActive : ""
+                                        }`}
+                                    >
+                                        <span>{step}</span>
+                                        <p className={styles.stepLabel}>
+                                            {step === 1 ? "Логин" : "Подтверждение"}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <form className={styles.modalForm} onSubmit={handleRecoverySubmit}>
+                            <label className={styles.label} htmlFor="recovery-login">
+                                Введите логин или email
+                            </label>
+                            <input
+                                id="recovery-login"
+                                className={styles.input}
+                                type="text"
+                                value={recoveryLogin}
+                                onChange={(e) => setRecoveryLogin(e.target.value)}
+                                placeholder="Ваш логин"
+                            />
+                            {recoveryError && (
+                                <p className={styles.modalError}>{recoveryError}</p>
+                            )}
+                            <p className={styles.modalHint}>
+                                {recoveryStep === 1
+                                    ? "Отправим ссылку на восстановление пароля на указанный адрес."
+                                    : "Проверьте почту и следуйте инструкции для обновления пароля."}
+                            </p>
+                            <button type="submit" className={styles.primaryButton}>
+                                Восстановить
+                            </button>
+                        </form>
                     </div>
                 </div>
-                <p className={styles.separator}>
-                    <span>или</span>
-                </p>
-                <div className={styles.input_box}>
-                    <label htmlFor="email">Email</label>
-                    <input
-                        type="email"
-                        id="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Введите почтовый адрес"
-                    />
-                </div>
-                <div className={styles.input_box}>
-                    <div className={styles.password_title}>
-                        <label htmlFor="password">Пароль</label>
-                        <Link to="#">Забыли пароль?</Link>
-                    </div>
-                    <input
-                        type="password"
-                        id="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Введите пароль"
-                    />
-                </div>
-                <button type="submit">Войти</button>
-                <p className={styles.sign_up}>
-                    Нет аккаунта? <Link to="/register">Зарегистрируйтесь</Link>
-                </p>
-            </form>
+            )}
         </div>
     );
 };

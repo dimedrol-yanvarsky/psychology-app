@@ -1,184 +1,224 @@
+:root {
+    --green-primary: #0f9d58;
+    --green-secondary: #21c276;
+    --text-main: #102a23;
+}
+
 .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 2rem;
-    height: 80px;
-    /* backdrop-filter: blur(20px); */
-    /* -webkit-backdrop-filter: blur(15px); */
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
     position: sticky;
     top: 0;
     z-index: 1000;
-    color: black;
-    /* border-bottom: 1px solid rgba(255, 255, 255, 0.3); */
+    background: linear-gradient(
+        180deg,
+        rgba(244, 253, 248, 0.96) 0%,
+        #ffffff 70%
+    );
+    border-bottom: 1px solid rgba(16, 42, 35, 0.07);
+    box-shadow: 0 0.45rem 1.35rem rgba(0, 0, 0, 0.06);
+    backdrop-filter: blur(10px);
+}
+
+.inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0.9rem 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
 }
 
 .logoContainer {
     display: flex;
     align-items: center;
-    transition: all 0.3s ease;
-    border-radius: 25px;
+    justify-content: center;
+    padding: 0.35rem 0.75rem;
+    border-radius: 1rem;
+    background: none;
+    box-shadow: none;
+    max-height: 64px;
+    overflow: hidden;
+    cursor: default;
 }
 
 .logoContainer:hover {
-    background: #ceebd2;
+    cursor: default;
 }
 
 .logo {
-    width: 200px;
-    border-radius: 5px;
-    padding: 5px;
+    display: block;
+    max-height: 52px;
+    width: auto;
+    object-fit: contain;
+    cursor: default;
 }
 
 .nav {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    justify-content: flex-end;
+    gap: 0.65rem;
+    flex-wrap: wrap;
 }
 
 .navLink {
     text-decoration: none;
-    padding: 0.5rem 1rem;
-    border-radius: 50px;
-    transition: all 0.3s ease;
-    font-weight: 500;
-    border: 2px solid transparent;
+    color: var(--text-main);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    padding: 0.6rem 1.1rem;
+    border-radius: 999px;
+    background: rgba(15, 157, 88, 0.06);
+    border: 1px solid rgba(16, 42, 35, 0.08);
+    box-shadow: 0 0.65rem 1.5rem rgba(0, 0, 0, 0.05);
+    transition: none;
 }
 
 .navLink:hover {
-    background: #ceebd2;
+    cursor: pointer;
+    text-decoration: none;
 }
 
-.navLink.active {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(5px);
+.navLink:active {
+    box-shadow: 0 0.35rem 0.9rem rgba(0, 0, 0, 0.05);
+}
+
+.navLink:focus {
+    text-decoration: none;
+}
+
+.active {
+    background: linear-gradient(135deg, var(--green-primary), var(--green-secondary));
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 0.65rem 1.4rem rgba(15, 157, 88, 0.28);
 }
 
 .homeLink {
-    font-size: 1.5rem;
-    padding: 0.3rem 0.8rem;
-    background: rgba(255, 255, 255, 0.15);
+    font-size: 1.1rem;
+    padding: 0.45rem 0.95rem;
+    position: relative;
+}
+
+.homeIcon {
+    width: 1.4rem;
+    height: 1.4rem;
+    fill: var(--text-main);
+    display: block;
+}
+
+.homeLink:active .homeIcon,
+.homeLink.active .homeIcon {
+    fill: #ffffff;
+}
+
+.homeLink::after {
+    content: "Личный кабинет";
+    position: absolute;
+    bottom: -1.8rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #102a23;
+    color: #ffffff;
+    padding: 0.3rem 0.6rem;
+    border-radius: 0.5rem;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.12s ease;
+    pointer-events: none;
+    box-shadow: 0 0.35rem 0.9rem rgba(0, 0, 0, 0.12);
+}
+
+.homeLink:hover::after {
+    opacity: 1;
+    visibility: visible;
 }
 
 .logoutButton {
-    background: rgba(255, 255, 255, 0.15);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    padding: 0.5rem 1rem;
-    border-radius: 5px;
+    background: rgba(217, 48, 37, 0.12);
+    color: #b82d22;
+    border: 1px solid rgba(217, 48, 37, 0.2);
+    padding: 0.55rem 1.05rem;
+    border-radius: 999px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    font-weight: 500;
-    backdrop-filter: blur(5px);
+    font-weight: 600;
+    transition: transform 0.15s ease, box-shadow 0.2s ease,
+        background 0.2s ease;
+    box-shadow: 0 0.8rem 1.8rem rgba(0, 0, 0, 0.05);
 }
 
 .logoutButton:hover {
-    background: #ceebd2;
-}
-
-/* Адаптивность */
-@media (max-width: 768px) {
-    .header {
-        padding: 1rem;
-        flex-direction: column;
-        gap: 1rem;
-        background: rgba(
-            76,
-            175,
-            80,
-            0.95
-        ); /* Меньше прозрачности на мобильных */
-    }
-
-    .nav {
-        gap: 1rem;
-    }
-
-    .navLink {
-        padding: 0.4rem 0.8rem;
-        font-size: 0.9rem;
-    }
+    background: rgba(217, 48, 37, 0.16);
+    box-shadow: 0 1rem 2.4rem rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
 }
 
 @media (max-width: 1366px) {
-    .header {
-        padding: 1rem 1.5rem;
-        height: 70px;
-    }
-
-    .logo {
-        width: 160px;
-    }
-
-    .nav {
-        gap: 1rem;
+    .inner {
+        padding: 0.85rem 1.25rem;
     }
 
     .navLink {
-        padding: 0.5rem 0.9rem;
-        font-size: 0.95rem;
+        padding: 0.55rem 1rem;
+        font-size: 0.97rem;
     }
 
     .homeLink {
-        font-size: 1.25rem;
-    }
-
-    .logoutButton {
-        padding: 0.5rem 0.9rem;
-        font-size: 0.95rem;
+        font-size: 1.05rem;
     }
 }
 
 @media (max-width: 1024px) {
-    .header {
+    .inner {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.75rem;
     }
 
     .nav {
-        flex-wrap: wrap;
-        gap: 0.75rem;
+        width: 100%;
+        justify-content: flex-start;
+        gap: 0.55rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .inner {
+        padding: 0.75rem 1rem;
     }
 
-    .navLink,
-    .logoutButton {
-        padding: 0.45rem 0.85rem;
+    .logo {
+        max-height: 46px;
     }
 
-    .homeLink {
-        font-size: 1.2rem;
+    .navLink {
+        padding: 0.5rem 0.9rem;
+        font-size: 0.92rem;
     }
 }
 
 @media (min-width: 1600px) {
-    .header {
-        padding: 1.4rem 3rem;
-        height: 110px;
+    .inner {
+        max-width: 1400px;
+        padding: 1.1rem 2.25rem;
     }
 
     .logo {
-        width: 110px;
-        padding: 10px;
+        max-height: 60px;
     }
 
     .nav {
-        gap: 2.25rem;
+        gap: 0.85rem;
     }
 
     .navLink {
-        padding: 0.85rem 1.45rem;
-        font-size: 1.1rem;
+        padding: 0.7rem 1.3rem;
+        font-size: 1.05rem;
     }
 
     .homeLink {
-        font-size: 1.9rem;
-        padding: 0.6rem 1.1rem;
-    }
-
-    .logoutButton {
-        padding: 0.85rem 1.45rem;
-        font-size: 1.1rem;
+        font-size: 1.25rem;
     }
 }

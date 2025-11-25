@@ -19,7 +19,15 @@ function App() {
     const [statusAlert, setStatusAlert] = useState("");
     const [messageAlert, setMessageAlert] = useState("");
 
-    const isAdmin = false;
+    const [isAuth, setIsAuth] = useState(false);
+    const user = {
+        name: "Димедрол",
+        surname: "Январский",
+        email: "jerrystreet@example.com",
+        status: "admin",
+    };
+
+    const [isAdmin, setIsAdmin] = useState(false);
 
     const showAlert = (status, message) => {
         setStatusAlert(status);
@@ -29,77 +37,44 @@ function App() {
             setMessageAlert("");
         }, 3000);
 
-        return true
+        return true;
     };
 
     return (
         <Router>
             <div className="App">
-                <Header />
+                <Header isAuth={isAuth} />
                 <div className="topBar">
                     <div className="topBarLeft">
                         {messageAlert && (
                             <AlertMessage
-                                showAlert={showAlert}
+                                statusAlert={statusAlert}
+                                messageAlert={messageAlert}
                             />
                         )}
                     </div>
-                    <div className="topBarRight">
-                        {isAdmin && (
-                            <>
-                                <button className="adminButton">
-                                    Редактировать 1
-                                </button>
-                                <button className="adminButton">
-                                    Редактировать 2
-                                </button>
-                                <button className="adminButton">
-                                    Редактировать 3
-                                </button>
-                            </>
-                        )}
-                    </div>
+                    <div className="topBarRight"></div>
                 </div>
                 <Routes>
                     <Route path="/" element={<Navigate to="/login" />} />
                     <Route
                         path="/login"
-                        element={
-                            <LoginPage
-                                showAlert={showAlert}
-                            />
-                        }
+                        element={<LoginPage showAlert={showAlert} />}
                     />
                     <Route
                         path="/register"
-                        element={
-                            <RegistrationPage
-                                statusAlert={statusAlert}
-                                setStatusAlert={setStatusAlert}
-                                messageAlert={messageAlert}
-                                setMessageAlert={setMessageAlert}
-                            />
-                        }
+                        element={<RegistrationPage showAlert={showAlert} />}
                     />
                     <Route
                         path="/account"
-                        element={
-                            <DashboardPage
-                                statusAlert={statusAlert}
-                                setStatusAlert={setStatusAlert}
-                                messageAlert={messageAlert}
-                                setMessageAlert={setMessageAlert}
-                            />
-                        }
+                        element={<DashboardPage showAlert={showAlert} />}
                     />
                     <Route
                         path="/recommendations"
                         element={
                             <RecommendationsPage
-                                statusAlert={statusAlert}
-                                setStatusAlert={setStatusAlert}
-                                messageAlert={messageAlert}
-                                setMessageAlert={setMessageAlert}
+                                showAlert={showAlert}
+                                isAdmin={isAdmin}
                             />
                         }
                     />
@@ -107,10 +82,9 @@ function App() {
                         path="/tests"
                         element={
                             <TestsPage
-                                statusAlert={statusAlert}
-                                setStatusAlert={setStatusAlert}
-                                messageAlert={messageAlert}
-                                setMessageAlert={setMessageAlert}
+                                showAlert={showAlert}
+                                isAdmin={isAdmin}
+                                isAuth={isAuth}
                             />
                         }
                     />
@@ -118,10 +92,9 @@ function App() {
                         path="/reviews"
                         element={
                             <ReviewsPage
-                                statusAlert={statusAlert}
-                                setStatusAlert={setStatusAlert}
-                                messageAlert={messageAlert}
-                                setMessageAlert={setMessageAlert}
+                                showAlert={showAlert}
+                                isAdmin={isAdmin}
+                                isAuth={isAuth}
                             />
                         }
                     />
