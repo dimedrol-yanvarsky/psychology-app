@@ -10,14 +10,14 @@ const Header = ({ isAuth }) => {
         return location.pathname === path ? styles.active : "";
     };
 
-    const homeTarget = isAuth ? "/dashboard" : "/login";
+    // const homeTarget = isAuth ? "/dashboard" : "/login";
     const navItems = [
         { to: "/tree", label: "Мои эмоции"},
         { to: "/recommendations", label: "Рекомендации" },
         { to: "/tests", label: "Тестирования" },
         { to: "/reviews", label: "Отзывы" },
         {
-            to: homeTarget,
+            to: "/account",
             label: "Личный кабинет",
             className: styles.homeLink,
             icon: (

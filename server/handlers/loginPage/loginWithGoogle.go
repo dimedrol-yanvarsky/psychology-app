@@ -6,16 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Account описывает данные пользователя из коллекции Account MongoDB.
-type Account struct {
-	FirstName string
-	LastName  string
-	Email     string
-	Password  string
-	Status    string
-	Provider  string
-}
-
 // Тестовые данные для OpenID Connect Google.
 // Подключение к БД имитируется на основании строки:
 // mongodb://localhost:27017 (см. connectToMongo.go).
@@ -32,6 +22,8 @@ var googleTestAccount = Account{
 func LoginWithGoogleHandler(c *gin.Context) {
 	// Эмулируем успешное чтение записи пользователя из коллекции Account.
 	account := googleTestAccount
+
+	c.JSON(http.StatusUnauthorized, gin.H{"error": "Авторизация временно невозможна"})
 
 	if account.Email == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "авторизация невозможна"})

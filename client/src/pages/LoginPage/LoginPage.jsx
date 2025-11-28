@@ -5,7 +5,7 @@ import logoYandex from "../../pictures/yandex-logo.png";
 import logoGoogle from "../../pictures/google-logo.png";
 import { Link, useNavigate } from "react-router-dom";
 
-const LoginPage = (props) => {
+const LoginPage = ({ showAlert, setIsAdmin, setIsAuth, setProfileData }) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,11 +23,11 @@ const LoginPage = (props) => {
 
         if (token) {
             localStorage.setItem("token", token);
-            window.location.href = "/dashboard";
+            window.location.href = "/account";
         }
 
         if (error) {
-            props.showAlert("error", `Ошибка авторизации: ${error}`);
+            showAlert("error", `Ошибка авторизации: ${error}`);
         }
     }, []);
 
@@ -35,7 +35,7 @@ const LoginPage = (props) => {
         event.preventDefault();
 
         if (!email || !password) {
-            props.showAlert("error", "Не оставляйте поля пустыми");
+            showAlert("error", "Не оставляйте поля пустыми");
             console.log("hi");
             return;
         }
@@ -46,15 +46,20 @@ const LoginPage = (props) => {
                 password,
             });
 
-            if (data.error) {
-                props.showAlert("error", data.error);
-                return;
+            if (data.status === "Администратор") {
+                setIsAdmin(true);
             }
 
-            props.showAlert("success", data.message || "Авторизация успешна");
-            navigate(data.redirect || "/personal");
+            console.log(data);
+            setProfileData(data)
+
+            setIsAuth(true);
+            showAlert("success", "Авторизация успешна");
+            navigate("/account");
         } catch (error) {
-            props.showAlert("error", "Ошибка авторизации");
+            if (error.status === 401) {
+                showAlert("error", "Логин или пароль неверный");
+            } else showAlert("error", "Не оставляйте поля пустыми");
         }
     };
 
@@ -63,14 +68,17 @@ const LoginPage = (props) => {
             const { data } = await axios.post(`${loginApiBase}/${provider}`);
 
             if (data.error) {
-                props.showAlert("error", data.error);
+                showAlert("error", data.error);
                 return;
             }
 
-            props.showAlert("success", data.message || "Авторизация выполнена");
-            navigate(data.redirect || "/account");
+            showAlert("success","Авторизация выполнена");
+            navigate("/account");
         } catch (error) {
-            props.showAlert("error", `Авторизация через ${provider} временно невозможна`);
+            showAlert(
+                "error",
+                `Авторизация через ${provider} временно невозможна`
+            );
         }
     };
 
@@ -98,8 +106,8 @@ const LoginPage = (props) => {
 
         setRecoveryError("");
         setRecoveryStep(2);
-        if (props.showAlert) {
-            props.showAlert("success", "Инструкция по восстановлению отправлена");
+        if (showAlert) {
+            showAlert("success", "Инструкция по восстановлению отправлена");
         }
     };
 
@@ -108,15 +116,20 @@ const LoginPage = (props) => {
             <div className={styles.layout}>
                 <section className={styles.introCard}>
                     <p className={styles.overline}>Доступ к рекомендациям</p>
-                    <h1 className={styles.title}>Вернитесь к спокойной работе над собой</h1>
+                    <h1 className={styles.title}>
+                        Вернитесь к спокойной работе над собой
+                    </h1>
                     <p className={styles.subtitle}>
-                        Сохраняем ваш прогресс, подборки и результаты тестов. Войдите, чтобы
-                        продолжить работу с рекомендациями и личным кабинетом.
+                        Сохраняем ваш прогресс, подборки и результаты тестов.
+                        Войдите, чтобы продолжить работу с рекомендациями и
+                        личным кабинетом.
                     </p>
                     <div className={styles.pills}>
                         <span className={styles.pill}>Безопасный вход</span>
                         <span className={styles.pill}>Поддержка 24/7</span>
-                        <span className={styles.pill}>Синхронизация данных</span>
+                        <span className={styles.pill}>
+                            Синхронизация данных
+                        </span>
                     </div>
                 </section>
 
@@ -124,9 +137,12 @@ const LoginPage = (props) => {
                     <div className={styles.loginHeader}>
                         <span className={styles.badge}>Авторизация</span>
                         <div>
-                            <h3 className={styles.cardTitle}>Войдите любым удобным способом</h3>
+                            <h3 className={styles.cardTitle}>
+                                Войдите любым удобным способом
+                            </h3>
                             <p className={styles.cardSubtitle}>
-                                Используйте корпоративный Google или Яндекс, либо продолжите по email.
+                                Используйте корпоративный Google или Яндекс,
+                                либо продолжите по email.
                             </p>
                         </div>
                     </div>
@@ -154,7 +170,11 @@ const LoginPage = (props) => {
                         <span>или авторизация по почте</span>
                     </div>
 
-                    <form onSubmit={handleSubmit} className={styles.form} noValidate>
+                    <form
+                        onSubmit={handleSubmit}
+                        className={styles.form}
+                        noValidate
+                    >
                         <label className={styles.label} htmlFor="email">
                             Email
                         </label>
@@ -206,7 +226,10 @@ const LoginPage = (props) => {
             </div>
 
             {isModalOpen && (
-                <div className={styles.modalOverlay} onClick={closeRecoveryModal}>
+                <div
+                    className={styles.modalOverlay}
+                    onClick={closeRecoveryModal}
+                >
                     <div
                         className={styles.modal}
                         onClick={(event) => event.stopPropagation()}
@@ -222,12 +245,17 @@ const LoginPage = (props) => {
                             ×
                         </button>
                         {/* <p className={styles.modalOverline}>Модальное окно</p> */}
-                        <h4 className={styles.modalTitle}>Восстановление пароля</h4>
+                        <h4 className={styles.modalTitle}>
+                            Восстановление пароля
+                        </h4>
                         <div className={styles.stepper}>
                             <div className={styles.stepLine}>
                                 <div
                                     className={styles.stepLineFill}
-                                    style={{ width: recoveryStep === 2 ? "100%" : "50%" }}
+                                    style={{
+                                        width:
+                                            recoveryStep === 2 ? "100%" : "50%",
+                                    }}
                                 />
                             </div>
                             <div className={styles.stepDots}>
@@ -235,20 +263,30 @@ const LoginPage = (props) => {
                                     <div
                                         key={step}
                                         className={`${styles.stepDot} ${
-                                            recoveryStep >= step ? styles.stepDotActive : ""
+                                            recoveryStep >= step
+                                                ? styles.stepDotActive
+                                                : ""
                                         }`}
                                     >
                                         <span>{step}</span>
                                         <p className={styles.stepLabel}>
-                                            {step === 1 ? "Логин" : "Подтверждение"}
+                                            {step === 1
+                                                ? "Логин"
+                                                : "Подтверждение"}
                                         </p>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        <form className={styles.modalForm} onSubmit={handleRecoverySubmit}>
-                            <label className={styles.label} htmlFor="recovery-login">
+                        <form
+                            className={styles.modalForm}
+                            onSubmit={handleRecoverySubmit}
+                        >
+                            <label
+                                className={styles.label}
+                                htmlFor="recovery-login"
+                            >
                                 Введите логин или email
                             </label>
                             <input
@@ -256,18 +294,25 @@ const LoginPage = (props) => {
                                 className={styles.input}
                                 type="text"
                                 value={recoveryLogin}
-                                onChange={(e) => setRecoveryLogin(e.target.value)}
+                                onChange={(e) =>
+                                    setRecoveryLogin(e.target.value)
+                                }
                                 placeholder="Ваш логин"
                             />
                             {recoveryError && (
-                                <p className={styles.modalError}>{recoveryError}</p>
+                                <p className={styles.modalError}>
+                                    {recoveryError}
+                                </p>
                             )}
                             <p className={styles.modalHint}>
                                 {recoveryStep === 1
                                     ? "Отправим ссылку на восстановление пароля на указанный адрес."
                                     : "Проверьте почту и следуйте инструкции для обновления пароля."}
                             </p>
-                            <button type="submit" className={styles.primaryButton}>
+                            <button
+                                type="submit"
+                                className={styles.primaryButton}
+                            >
                                 Восстановить
                             </button>
                         </form>

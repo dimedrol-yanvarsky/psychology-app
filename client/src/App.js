@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
     BrowserRouter as Router,
     Routes,
@@ -14,20 +14,32 @@ import RegistrationPage from "./pages/RegistrationPage/RegistrationPage";
 import "./App.css";
 import ReviewsPage from "./pages/ReviewsPage/ReviewsPage";
 import AlertMessage from "./components/AlertMessage/AlertMessage";
+import Terminal from "./components/Terminal/Terminal";
+
 
 function App() {
     const [statusAlert, setStatusAlert] = useState("");
     const [messageAlert, setMessageAlert] = useState("");
 
     const [isAuth, setIsAuth] = useState(false);
-    const user = {
-        name: "Димедрол",
-        surname: "Январский",
-        email: "jerrystreet@example.com",
-        status: "admin",
-    };
-
     const [isAdmin, setIsAdmin] = useState(false);
+
+    const privateRoutes = ["/account"];
+    const publicRoutes = [
+        "/login",
+        "/register",
+        "/recommendations",
+        "/tests",
+        "/reviews",
+    ];
+
+    const [profileData, setProfileData] = useState({
+        id: null,
+        firstName: "",
+        lastName: "",
+        email: "",
+        psychotype: "",
+    });
 
     const showAlert = (status, message) => {
         setStatusAlert(status);
@@ -38,6 +50,21 @@ function App() {
         }, 3000);
 
         return true;
+    };
+
+    const getRouteElement = (path, element) => {
+        const isPrivateRoute = privateRoutes.includes(path);
+        const isPublicRoute = publicRoutes.includes(path);
+
+        if (isPrivateRoute && !isAuth) {
+            return <Navigate to="/login" replace />;
+        }
+
+        if (!isPrivateRoute && !isPublicRoute) {
+            return <Navigate to="/login" replace />;
+        }
+
+        return element;
     };
 
     return (
@@ -53,45 +80,78 @@ function App() {
                             />
                         )}
                     </div>
-                    <div className="topBarRight"></div>
                 </div>
                 <Routes>
                     <Route path="/" element={<Navigate to="/login" />} />
                     <Route
                         path="/login"
-                        element={<LoginPage showAlert={showAlert} />}
+                        element={getRouteElement(
+                            "/login",
+                            <LoginPage
+                                showAlert={showAlert}
+                                setIsAdmin={setIsAdmin}
+                                setIsAuth={setIsAuth}
+                                setProfileData={setProfileData}
+                            />
+                        )}
                     />
                     <Route
                         path="/register"
-                        element={<RegistrationPage showAlert={showAlert} />}
+                        element={getRouteElement(
+                            "/register",
+                            <RegistrationPage showAlert={showAlert} />
+                        )}
                     />
                     <Route
                         path="/account"
-                        element={<DashboardPage showAlert={showAlert} />}
+                        element={getRouteElement(
+                            "/account",
+                            <DashboardPage
+                                showAlert={showAlert}
+                                isAdmin={isAdmin}
+                                setIsAdmin={setIsAdmin}
+                                setIsAuth={setIsAuth}
+                                profileData={profileData}
+                                setProfileData={setProfileData}
+                            />
+                        )}
                     />
                     <Route
                         path="/recommendations"
-                        element={
+                        element={getRouteElement(
+                            "/recommendations",
                             <RecommendationsPage
                                 showAlert={showAlert}
                                 isAdmin={isAdmin}
                             />
-                        }
+                        )}
                     />
                     <Route
                         path="/tests"
-                        element={
+                        element={getRouteElement(
+                            "/tests",
                             <TestsPage
                                 showAlert={showAlert}
                                 isAdmin={isAdmin}
                                 isAuth={isAuth}
                             />
-                        }
+                        )}
                     />
                     <Route
                         path="/reviews"
-                        element={
+                        element={getRouteElement(
+                            "/reviews",
                             <ReviewsPage
+                                showAlert={showAlert}
+                                isAdmin={isAdmin}
+                                isAuth={isAuth}
+                            />
+                        )}
+                    />
+                     <Route
+                        path="/terminal"
+                        element={
+                            <Terminal
                                 showAlert={showAlert}
                                 isAdmin={isAdmin}
                                 isAuth={isAuth}

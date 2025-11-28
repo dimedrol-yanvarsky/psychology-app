@@ -7,7 +7,7 @@ import (
 func main() {
 
 	// Подключение к MongoDB
-	connectToMongo()
+	connectToDatabase()
 	// Настраиваем роутер (без знания о MongoDB) в файле router.go
 	router := setupRouter()
 

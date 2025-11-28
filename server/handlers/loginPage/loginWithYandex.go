@@ -19,6 +19,9 @@ var yandexTestAccount = Account{
 
 // LoginWithYandexHandler имитирует авторизацию через Yandex OpenID Connect.
 func LoginWithYandexHandler(c *gin.Context) {
+
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Авторизация временно невозможна"})
+
 	account := yandexTestAccount
 
 	if account.Email == "" {

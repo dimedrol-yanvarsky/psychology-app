@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap");
 
 /* terminal.module.css */
-.app {
+/* .app {
     min-height: 100vh;
     padding: 1.5rem;
     display: flex;
@@ -18,10 +18,10 @@
         #020617 100%
     );
     color: #e5e7eb;
-}
+} */
 
 .window {
-    width: min(77.5rem, 100%);
+    width: 75rem;
     height: 40rem;
     border-radius: 1.125rem;
     background: radial-gradient(circle at top left, #111827 0, #020617 60%);
@@ -68,6 +68,11 @@
     color: #cbd5f5;
     transition: background 0.18s ease, transform 0.18s ease,
         border-color 0.18s ease;
+}
+
+.pillLabel {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+        Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 .pillActive {
@@ -143,6 +148,36 @@
         rgba(239, 68, 68, 0.85),
         rgba(127, 29, 29, 1)
     );
+}
+
+.controlClose::before {
+    display: none;
+}
+
+.controlClose::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0.85rem;
+    height: 0.85rem;
+    transform: translate(-50%, -50%);
+    background:
+        linear-gradient(
+            45deg,
+            transparent 45%,
+            rgba(17, 24, 39, 0.92) 45%,
+            rgba(17, 24, 39, 0.92) 55%,
+            transparent 55%
+        ),
+        linear-gradient(
+            -45deg,
+            transparent 45%,
+            rgba(17, 24, 39, 0.92) 45%,
+            rgba(17, 24, 39, 0.92) 55%,
+            transparent 55%
+        );
+    pointer-events: none;
 }
 
 /* КОНТЕНТ */
@@ -425,15 +460,15 @@
 }
 
 .previewBarLightPrimary {
-    background: rgba(59, 130, 246, 0.8);
+    background: #1d4ed8;
 }
 
 .previewBarLightSecondary {
-    background: rgba(148, 163, 184, 0.9);
+    background: #94a3b8;
 }
 
 .previewBarLightAccent {
-    background: rgba(16, 185, 129, 0.65);
+    background: #16a34a;
 }
 
 @media (min-width: 100rem) {
@@ -467,8 +502,8 @@
     .controlIcon,
     .roundIcon,
     .roundIconGhost {
-        width: 2.125rem;
-        height: 2.125rem;
+        width: 2.25rem;
+        height: 2.25rem;
     }
 
     .roundIconIcon,
@@ -510,8 +545,8 @@
 }
 
 .roundIcon {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 2rem;
+    height: 2rem;
     border-radius: 62.4375rem;
     border: 0.0625rem solid rgba(55, 65, 81, 0.9);
     background: radial-gradient(
@@ -519,6 +554,8 @@
         rgba(156, 163, 175, 0.3),
         rgba(15, 23, 42, 1)
     );
+    display: grid;
+    place-items: center;
     cursor: pointer;
     transition: transform 0.18s ease, border-color 0.18s ease,
         background 0.18s ease;
@@ -539,8 +576,8 @@
 }
 
 .roundIconIcon {
-    width: 0.875rem;
-    height: 0.875rem;
+    width: 1rem;
+    height: 1rem;
     display: block;
 }
 
@@ -666,6 +703,11 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+}
+
+.themePreviewLight {
+    background: #f4f6f9;
+    border-color: #dbe3ea;
 }
 
 .previewBar,

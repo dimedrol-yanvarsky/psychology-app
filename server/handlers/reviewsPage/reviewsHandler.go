@@ -9,17 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-// внутренняя переменная пакета — сюда положим коллекцию из main.go
-var reviewsCollection *mongo.Collection
-
-// InitReviews вызывается из main.go один раз на старте приложения.
-func InitReviews(collection *mongo.Collection) {
-	reviewsCollection = collection
-}
 
 // POST /api/reviews/createReview
 func CreateReviewHandler(c *gin.Context) {
@@ -56,13 +47,13 @@ func CreateReviewHandler(c *gin.Context) {
 		})
 		return
 	}
-	if !isEmailLike(input.Email) {
-		c.JSON(http.StatusBadRequest, APIResponse{
-			Status:  "error",
-			Message: "Укажите корректный e-mail.",
-		})
-		return
-	}
+	// if !isEmailLike(input.Email) {
+	// 	c.JSON(http.StatusBadRequest, APIResponse{
+	// 		Status:  "error",
+	// 		Message: "Укажите корректный e-mail.",
+	// 	})
+	// 	return
+	// }
 	if len(input.Text) < 10 {
 		c.JSON(http.StatusBadRequest, APIResponse{
 			Status:  "error",
