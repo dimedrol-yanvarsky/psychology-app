@@ -5,7 +5,7 @@ const baseTests = [
     {
         id: "t-1",
         title: "Шкала депрессии Бека",
-        duration: "10–15 минут",
+        duration: 15,
         author: "Аарон Бек",
         summary:
             "Самостоятельная оценка выраженности депрессивной симптоматики. Подходит для первичного скрининга состояния.",
@@ -71,7 +71,7 @@ const TestsPage = (props) => {
                                         </span>
                                     </div>
                                     <span className={styles.durationBadge}>
-                                        {test.duration}
+                                        Количество вопросов: {test.duration}
                                     </span>
                                 </header>
 

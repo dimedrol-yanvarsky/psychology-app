@@ -7,9 +7,9 @@ import (
 func main() {
 
 	// Подключение к MongoDB
-	connectToDatabase()
-	// Настраиваем роутер (без знания о MongoDB) в файле router.go
-	router := setupRouter()
+	db := connectToDatabase()
+	// Настраиваем роутер, передавая подключение к БД во все обработчики
+	router := setupRouter(db)
 
 	//Запуск сервера
 	log.Println("Сервер запущен на http://localhost:8080")

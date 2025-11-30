@@ -1,0 +1,95 @@
+.page {
+    --green-primary: #0f9d58;
+    --green-secondary: #21c276;
+    --green-light: #e4f6ee;
+    --green-superlight: #f4fdf8;
+    --text-main: #102a23;
+    --text-muted: #5b7068;
+    min-height: 100vh;
+    padding: 2.5rem 1.5rem 3rem;
+    background: linear-gradient(145deg, #ffffff 0%, #f7fbf8 100%);
+    color: var(--text-main);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card {
+    width: min(960px, 100%);
+    background: linear-gradient(180deg, rgba(244, 253, 248, 0.96) 0%, #ffffff 100%);
+    border-radius: 1.25rem;
+    border: 1px solid rgba(16, 42, 35, 0.08);
+    box-shadow: 0 1rem 2.25rem rgba(0, 0, 0, 0.08);
+    padding: 2rem 2.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    text-align: center;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    background: rgba(15, 157, 88, 0.12);
+    color: var(--green-primary);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    font-size: 0.86rem;
+}
+
+.title {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+.subtitle {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 1rem;
+    line-height: 1.5;
+    max-width: 720px;
+}
+
+.imageWrapper {
+    width: 100%;
+    max-width: 500px;
+    border-radius: 1.1rem;
+    overflow: hidden;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    aspect-ratio: 16 / 9;
+}
+
+.image {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    filter: saturate(1.05);
+}
+
+@media (max-width: 768px) {
+    .page {
+        padding: 1.75rem 1rem 2.25rem;
+    }
+
+    .card {
+        padding: 1.6rem 1.5rem;
+    }
+
+    .title {
+        font-size: 1.6rem;
+    }
+
+    .subtitle {
+        font-size: 0.96rem;
+    }
+}

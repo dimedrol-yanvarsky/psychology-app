@@ -1,30 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 import Terminal from "../../components/Terminal/Terminal";
 import logoYandex from "../../pictures/yandex-logo.png";
 import logoGoogle from "../../pictures/google-logo.png";
 import styles from "./DashboardPage.module.css";
-
-const defaultAdminAccounts = [
-    {
-        id: 1,
-        firstName: "Анна",
-        lastName: "Иванова",
-        email: "anna.ivanova@example.com",
-    },
-    {
-        id: 2,
-        firstName: "Дмитрий",
-        lastName: "Кузнецов",
-        email: "d.kuznetsov@example.com",
-    },
-    {
-        id: 3,
-        firstName: "София",
-        lastName: "Лебедева",
-        email: "s.lebedeva@example.com",
-    },
-];
 
 const DashboardPage = ({
     showAlert,
@@ -35,31 +15,55 @@ const DashboardPage = ({
     setProfileData,
 }) => {
     const navigate = useNavigate();
+    const dashboardApiBase = "http://localhost:8080/api/dashboard";
     const [user, setUser] = useState(null);
-    const [isLoading] = useState(false);
     const [isTestModalOpen, setIsTestModalOpen] = useState(false);
     const [isTerminalOpen, setIsTerminalOpen] = useState(false);
-    const [adminAccounts] = useState(defaultAdminAccounts);
-    const [completedTests] = useState([
-        {
-            id: "t1",
-            title: "Шкала депрессии Бека",
-            score: "Средний уровень",
-            date: "12.04.2024",
-        },
-        {
-            id: "t2",
-            title: "Опросник Спилбергера-Ханина",
-            score: "Низкая тревожность",
-            date: "03.03.2024",
-        },
-    ]);
+    const [adminAccounts, setAdminAccounts] = useState([]);
+    const [isAdminListLoading, setIsAdminListLoading] = useState(
+        profileData?.status === "Администратор"
+    );
+    const [adminListError, setAdminListError] = useState("");
+    const [answersModal, setAnswersModal] = useState({
+        open: false,
+        loading: false,
+        error: "",
+        answers: [],
+        questions: [],
+        title: "",
+    });
+    const [completedTests, setCompletedTests] = useState([]);
+    const [isCompletedTestsLoading, setIsCompletedTestsLoading] =
+        useState(true);
+    const [completedTestsError, setCompletedTestsError] = useState("");
     const [emotionData] = useState([
         { id: "calm", label: "Спокойствие", value: 72 },
         { id: "energy", label: "Энергия", value: 54 },
         { id: "focus", label: "Фокус", value: 61 },
         { id: "stress", label: "Стресс", value: 28 },
     ]);
+
+    const selectedAnswers = useMemo(() => {
+        const map = new Map();
+        if (!Array.isArray(answersModal.answers)) {
+            return map;
+        }
+
+        answersModal.answers.forEach((item) => {
+            if (Array.isArray(item) && item.length > 1) {
+                const [qNumber, ...rest] = item;
+                const normalized = Number(qNumber);
+                const answersSet = new Set(
+                    rest.map((num) => Number(num)).filter((num) => !isNaN(num))
+                );
+                if (!isNaN(normalized)) {
+                    map.set(normalized, answersSet);
+                }
+            }
+        });
+
+        return map;
+    }, [answersModal.answers]);
 
     const providers = Array.isArray(user?.providers) ? user.providers : [];
     const providerValue = user?.provider || profileData?.provider || "";
@@ -114,17 +118,16 @@ const DashboardPage = ({
     };
 
     const handleLinkProvider = (provider) => {
-        if (showAlert) {
-            showAlert(
-                "error",
-                `Привязка аккаунта ${provider} будет доступна позже`
-            );
-        }
+        return showAlert(
+            "error",
+            `Привязка аккаунта ${provider} будет доступна позже`
+        );
     };
 
     const handleStartTesting = () => {
         setIsTestModalOpen(false);
-        navigate("/tests");
+        return showAlert("error", "Тестирование пока недоступно");
+        // navigate("/tests");
     };
 
     const handleAdminAction = (action, account) => {
@@ -135,6 +138,193 @@ const DashboardPage = ({
             );
         }
     };
+
+    useEffect(() => {
+        if (profileData?.status !== "Администратор") {
+            setAdminAccounts([]);
+            setIsAdminListLoading(false);
+            setAdminListError("");
+            return;
+        }
+
+        if (!profileData?.id) {
+            setAdminAccounts([]);
+            setIsAdminListLoading(false);
+            setAdminListError("Не указан идентификатор пользователя");
+            return;
+        }
+
+        const fetchUsers = async () => {
+            setIsAdminListLoading(true);
+            setAdminListError("");
+
+            try {
+                const { data } = await axios.post(`${dashboardApiBase}/users`, {
+                    userId: profileData.id,
+                    status: profileData.status,
+                });
+
+                if (data?.status === "success") {
+                    setAdminAccounts(
+                        Array.isArray(data.users) ? data.users : []
+                    );
+                } else {
+                    setAdminAccounts([]);
+                    setAdminListError(
+                        data?.message || "Не удалось загрузить пользователей"
+                    );
+                }
+            } catch (error) {
+                const message =
+                    error?.response?.data?.message ||
+                    error?.message ||
+                    "Ошибка загрузки пользователей";
+                setAdminAccounts([]);
+                setAdminListError(message);
+            } finally {
+                setIsAdminListLoading(false);
+            }
+        };
+
+        fetchUsers();
+    }, [dashboardApiBase, profileData?.id, profileData?.status]);
+
+    const openAnswersModal = async (test) => {
+        setAnswersModal({
+            open: true,
+            loading: true,
+            error: "",
+            answers: [],
+            questions: [],
+            title: test.testName || "Пройденный тест",
+        });
+
+        if (!profileData?.id || !test?.id || !test?.testId) {
+            setAnswersModal((prev) => ({
+                ...prev,
+                loading: false,
+                error: "Недостаточно данных для загрузки результата",
+            }));
+            return;
+        }
+
+        try {
+            console.log("Тест id");
+            console.log(test.id);
+            const { data } = await axios.post(
+                `${dashboardApiBase}/user-answers`,
+                {
+                    userId: profileData.id,
+                    completedTestId: test.id,
+                    testId: test.testId,
+                }
+            );
+
+            console.log("Данные теста:");
+            console.log(data);
+            console.log("Ответы");
+            console.log(data.answers);
+            console.log("Вопросы");
+            console.log(data.questions);
+
+            if (data?.status === "success") {
+                setAnswersModal((prev) => ({
+                    ...prev,
+                    loading: false,
+                    answers: Array.isArray(data.answers) ? data.answers : [],
+                    questions: Array.isArray(data.questions)
+                        ? data.questions
+                        : [],
+                }));
+            } else {
+                setAnswersModal((prev) => ({
+                    ...prev,
+                    loading: false,
+                    error:
+                        data?.message ||
+                        "Не удалось загрузить ответы пользователя",
+                }));
+            }
+        } catch (error) {
+            const message =
+                error?.response?.data?.message ||
+                error?.message ||
+                "Ошибка загрузки ответов пользователя";
+            setAnswersModal((prev) => ({
+                ...prev,
+                loading: false,
+                error: message,
+            }));
+        }
+    };
+
+    const closeAnswersModal = () => {
+        setAnswersModal({
+            open: false,
+            loading: false,
+            error: "",
+            answers: [],
+            questions: [],
+            title: "",
+        });
+    };
+
+    useEffect(() => {
+        if (answersModal.open) {
+            const originalOverflow = document.body.style.overflow;
+            document.body.style.overflow = "hidden";
+
+            return () => {
+                document.body.style.overflow = originalOverflow;
+            };
+        }
+
+        return undefined;
+    }, [answersModal.open]);
+
+    useEffect(() => {
+        if (!profileData?.id) {
+            setIsCompletedTestsLoading(false);
+            setCompletedTests([]);
+            return;
+        }
+
+        const fetchCompletedTests = async () => {
+            setIsCompletedTestsLoading(true);
+            setCompletedTestsError("");
+
+            try {
+                const { data } = await axios.post(
+                    `${dashboardApiBase}/completed-tests`,
+                    { userId: profileData.id }
+                );
+
+                if (data?.status === "success") {
+                    console.log(data.tests);
+                    setCompletedTests(
+                        Array.isArray(data.tests) ? data.tests : []
+                    );
+                } else {
+                    setCompletedTests([]);
+                    setCompletedTestsError(
+                        data?.message ||
+                            "Не удалось загрузить список пройденных тестов"
+                    );
+                }
+            } catch (error) {
+                const message =
+                    error?.response?.data?.message ||
+                    error?.message ||
+                    "Ошибка загрузки пройденных тестов";
+                setCompletedTests([]);
+                setCompletedTestsError(message);
+            } finally {
+                setIsCompletedTestsLoading(false);
+            }
+        };
+
+        fetchCompletedTests();
+    }, [dashboardApiBase, profileData?.id]);
 
     return (
         <div className={styles.page}>
@@ -199,23 +389,6 @@ const DashboardPage = ({
                                     )
                                 }
                                 placeholder="Имя"
-                            />
-
-                            <label className={styles.label} htmlFor="last-name">
-                                Фамилия
-                            </label>
-                            <input
-                                id="last-name"
-                                className={styles.input}
-                                type="text"
-                                value={profileData.lastName}
-                                onChange={(event) =>
-                                    handleFieldChange(
-                                        "lastName",
-                                        event.target.value
-                                    )
-                                }
-                                placeholder="Фамилия"
                             />
 
                             <label className={styles.label} htmlFor="email">
@@ -335,13 +508,12 @@ const DashboardPage = ({
                                 тестирование, если Вы еще этого не сделали.
                             </p>
                         </div>
-
                     </div>
 
-                    {profileData.psychotype ? (
+                    {profileData.psychoType ? (
                         <div className={styles.psychotypeContent}>
                             <div className={styles.psychotypeTag}>
-                                {profileData.psychotype}
+                                {profileData.psychoType}
                             </div>
                             <p className={styles.subtitle}>
                                 Вы всегда можете обновить результат, пройдя тест
@@ -399,7 +571,21 @@ const DashboardPage = ({
                         </div>
                     </div>
 
-                    {completedTests.length === 0 ? (
+                    {isCompletedTestsLoading ? (
+                        <div className={styles.testsLoader}>
+                            <div
+                                className={styles.loaderSpinner}
+                                aria-hidden="true"
+                            />
+                            <span className={styles.loaderText}>
+                                Загрузка...
+                            </span>
+                        </div>
+                    ) : completedTestsError ? (
+                        <div className={styles.testsError}>
+                            {completedTestsError}
+                        </div>
+                    ) : completedTests.length === 0 ? (
                         <div className={styles.psychotypeEmpty}>
                             <div>
                                 <h4 className={styles.emptyTitle}>
@@ -420,21 +606,26 @@ const DashboardPage = ({
                     ) : (
                         <div className={styles.testsList}>
                             {completedTests.map((test) => (
-                                <div key={test.id} className={styles.testRow}>
+                                <div
+                                    key={test.testId || test.id}
+                                    className={styles.testRow}
+                                >
                                     <div className={styles.testInfo}>
                                         <div className={styles.testTitle}>
-                                            {test.title}
+                                            {test.testName}
                                         </div>
                                         <div className={styles.testMeta}>
-                                            {test.date} · {test.score}
+                                            {test.date || "Дата не указана"} ·{" "}
+                                            {test.result || "Без результата"}
                                         </div>
                                     </div>
-                                    <Link
-                                        to="/tests"
+                                    <button
+                                        type="button"
                                         className={styles.linkButton}
+                                        onClick={() => openAnswersModal(test)}
                                     >
                                         Открыть
-                                    </Link>
+                                    </button>
                                 </div>
                             ))}
                         </div>
@@ -499,30 +690,6 @@ const DashboardPage = ({
                     )}
                 </section>
 
-                <div className={styles.quickGrid}>
-                    <Link to="/recommendations" className={styles.quickCard}>
-                        <div className={styles.quickIcon}>🎯</div>
-                        <div>
-                            <h4 className={styles.quickTitle}>Рекомендации</h4>
-                            <p className={styles.quickText}>
-                                Персональные подборки с учетом текущего статуса
-                                и результатов тестов.
-                            </p>
-                        </div>
-                    </Link>
-
-                    <Link to="/tests" className={styles.quickCard}>
-                        <div className={styles.quickIcon}>📊</div>
-                        <div>
-                            <h4 className={styles.quickTitle}>Тестирования</h4>
-                            <p className={styles.quickText}>
-                                Запустите новое тестирование или вернитесь к уже
-                                пройденным.
-                            </p>
-                        </div>
-                    </Link>
-                </div>
-
                 {isAdmin && (
                     <section className={styles.adminPanel}>
                         <div className={styles.sectionHead}>
@@ -553,72 +720,103 @@ const DashboardPage = ({
                         </div>
 
                         <div className={styles.adminList}>
-                            {adminAccounts.map((account) => (
-                                <div
-                                    key={account.id}
-                                    className={styles.adminUserCard}
-                                >
-                                    <div className={styles.adminUserInfo}>
-                                        <div className={styles.adminUserName}>
-                                            {account.firstName}{" "}
-                                            {account.lastName}
-                                        </div>
-                                        <div className={styles.adminUserEmail}>
-                                            {account.email}
-                                        </div>
-                                    </div>
-                                    <div className={styles.adminActions}>
-                                        <button
-                                            type="button"
-                                            className={`${styles.cardActionButton} ${styles.cardPrimaryButton}`}
-                                            onClick={() =>
-                                                handleAdminAction(
-                                                    "Просмотр тестирований",
-                                                    account
-                                                )
-                                            }
-                                        >
-                                            Просмотреть тестирования
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={`${styles.cardActionButton} ${styles.cardPrimaryButton}`}
-                                            onClick={() =>
-                                                handleAdminAction(
-                                                    "Дерево эмоций",
-                                                    account
-                                                )
-                                            }
-                                        >
-                                            Дерево эмоций
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={styles.secondaryButton}
-                                            onClick={() =>
-                                                handleAdminAction(
-                                                    "Блокировка аккаунта",
-                                                    account
-                                                )
-                                            }
-                                        >
-                                            Заблокировать аккаунт
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={`${styles.cardActionButton} ${styles.cardDeleteButton}`}
-                                            onClick={() =>
-                                                handleAdminAction(
-                                                    "Удаление аккаунта",
-                                                    account
-                                                )
-                                            }
-                                        >
-                                            Удалить аккаунт
-                                        </button>
-                                    </div>
+                            {isAdminListLoading ? (
+                                <div className={styles.adminLoader}>
+                                    <div
+                                        className={styles.loaderSpinner}
+                                        aria-hidden="true"
+                                    />
+                                    <span className={styles.loaderText}>
+                                        Загрузка данных...
+                                    </span>
                                 </div>
-                            ))}
+                            ) : adminListError ? (
+                                <div className={styles.adminError}>
+                                    {adminListError}
+                                </div>
+                            ) : adminAccounts.length === 0 ? (
+                                <div className={styles.adminEmpty}>
+                                    Пользователи не найдены
+                                </div>
+                            ) : (
+                                adminAccounts.map((account) => (
+                                    <div
+                                        key={account.id}
+                                        className={styles.adminUserCard}
+                                    >
+                                        <div className={styles.adminUserInfo}>
+                                            <div
+                                                className={styles.adminUserName}
+                                            >
+                                                {account.firstName ||
+                                                    "Без имени"}
+                                                {account.lastName
+                                                    ? ` ${account.lastName}`
+                                                    : ""}
+                                            </div>
+                                            <div
+                                                className={
+                                                    styles.adminUserEmail
+                                                }
+                                            >
+                                                {account.email || "—"}
+                                            </div>
+                                        </div>
+                                        <div className={styles.adminActions}>
+                                            <button
+                                                type="button"
+                                                className={`${styles.cardActionButton} ${styles.cardPrimaryButton}`}
+                                                onClick={() =>
+                                                    handleAdminAction(
+                                                        "Просмотр тестирований",
+                                                        account
+                                                    )
+                                                }
+                                            >
+                                                Просмотреть тестирования
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`${styles.cardActionButton} ${styles.cardPrimaryButton}`}
+                                                onClick={() =>
+                                                    handleAdminAction(
+                                                        "Дерево эмоций",
+                                                        account
+                                                    )
+                                                }
+                                            >
+                                                Дерево эмоций
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={
+                                                    styles.secondaryButton
+                                                }
+                                                onClick={() =>
+                                                    handleAdminAction(
+                                                        "Блокировка аккаунта",
+                                                        account
+                                                    )
+                                                }
+                                            >
+                                                Заблокировать аккаунт
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`${styles.cardActionButton} ${styles.cardDeleteButton}`}
+                                                onClick={() =>
+                                                    handleAdminAction(
+                                                        "Удаление аккаунта",
+                                                        account
+                                                    )
+                                                }
+                                            >
+                                                Удалить аккаунт
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </section>
                 )}
@@ -635,7 +833,10 @@ const DashboardPage = ({
                         role="dialog"
                         aria-modal="true"
                     >
-                        <Terminal profileData={profileData} setIsTerminalOpen={setIsTerminalOpen}/>
+                        <Terminal
+                            profileData={profileData}
+                            setIsTerminalOpen={setIsTerminalOpen}
+                        />
                     </div>
                 </div>
             )}
@@ -680,6 +881,174 @@ const DashboardPage = ({
                         >
                             Начать тестирование
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {answersModal.open && (
+                <div
+                    className={styles.modalOverlay}
+                    onClick={closeAnswersModal}
+                >
+                    <div
+                        className={styles.answersModal}
+                        onClick={(event) => event.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                    >
+                        <button
+                            type="button"
+                            className={styles.modalClose}
+                            onClick={closeAnswersModal}
+                            aria-label="Закрыть модальное окно"
+                        >
+                            ×
+                        </button>
+                        <p className={styles.modalOverline}>Пройденный тест</p>
+                        <h4 className={styles.modalTitle}>
+                            {answersModal.title || "Результаты теста"}
+                        </h4>
+                        {answersModal.loading ? (
+                            <div className={styles.testsLoader}>
+                                <div
+                                    className={styles.loaderSpinner}
+                                    aria-hidden="true"
+                                />
+                                <span className={styles.loaderText}>
+                                    Загрузка...
+                                </span>
+                            </div>
+                        ) : answersModal.error ? (
+                            <div className={styles.testsError}>
+                                {answersModal.error}
+                            </div>
+                        ) : (
+                            <div className={styles.questionsList}>
+                                    {answersModal.questions.map(
+                                        (question, questionIndex) => {
+                                            console.log('Вывод вопроса')
+                                            console.log(question)
+                                            const selectType =
+                                                question.selectype ||
+                                                question.selectType ||
+                                                "";
+                                            const isSingle = selectType === "one";
+                                            const questionNumber =
+                                                question.id ||
+                                                question.number ||
+                                                questionIndex + 1;
+                                            const selected =
+                                                selectedAnswers.get(
+                                                    Number(questionNumber)
+                                                ) || new Set();
+
+                                        const rawQuestionText =
+                                            question.questionBody ||
+                                            question.question ||
+                                            question.body ||
+                                            "";
+                                        const questionText =
+                                            typeof rawQuestionText === "string"
+                                                ? rawQuestionText
+                                                : rawQuestionText?.body ||
+                                                  rawQuestionText?.text ||
+                                                  rawQuestionText?.title ||
+                                                  "Вопрос";
+
+                                        const options = Array.isArray(
+                                            question.answerOptions
+                                        )
+                                            ? question.answerOptions
+                                            : Array.isArray(question.answers)
+                                            ? question.answers
+                                            : [];
+                                        return (
+                                            <div
+                                                key={
+                                                    question.id || questionIndex
+                                                }
+                                                className={styles.questionCard}
+                                            >
+                                                <div
+                                                className={
+                                                    styles.questionTitle
+                                                }
+                                            >
+                                                {questionNumber}.{" "}
+                                                    {questionText}
+                                                </div>
+                                                <div
+                                                    className={
+                                                        styles.optionsList
+                                                    }
+                                                >
+                                                    {options.map(
+                                                        (
+                                                            option,
+                                                            optionIndex
+                                                        ) => {
+                                                            const optionNumber =
+                                                                optionIndex + 1;
+                                                            const optionLabel =
+                                                                typeof option ===
+                                                                "string"
+                                                                    ? option
+                                                                    : option?.body ||
+                                                                      option
+                                                                          ?.text ||
+                                                                      option
+                                                                          ?.title ||
+                                                                      option?.label ||
+                                                                      String(
+                                                                          optionNumber
+                                                                      );
+                                                            const isChecked =
+                                                                selected instanceof
+                                                                    Set &&
+                                                                selected.has(
+                                                                    optionNumber
+                                                                );
+                                                            const inputType =
+                                                                isSingle
+                                                                    ? "radio"
+                                                                    : "checkbox";
+
+                                                            return (
+                                                                <label
+                                                                    key={`${question.id || questionIndex}-${option.id || optionIndex}`}
+                                                                    className={`${
+                                                                        styles.optionItem
+                                                                    } ${
+                                                                        isChecked
+                                                                            ? styles.optionSelected
+                                                                            : ""
+                                                                    }`}
+                                                                >
+                                                                    <input
+                                                                        type={
+                                                                            inputType
+                                                                        }
+                                                                        name={`question-${questionNumber}`}
+                                                                        checked={
+                                                                            isChecked
+                                                                        }
+                                                                        disabled
+                                                                        readOnly
+                                                                    />
+                                                                    <span>
+                                                                        {optionLabel}
+                                                                    </span>
+                                                                </label>
+                                                            );
+                                                        }
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

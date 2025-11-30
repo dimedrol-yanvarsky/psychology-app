@@ -9,15 +9,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // POST /api/reviews/createReview
-func CreateReviewHandler(c *gin.Context) {
-	if reviewsCollection == nil {
+func CreateReviewHandler(db *mongo.Database, c *gin.Context) {
+	collection, ok := getReviewsCollection(db)
+	if !ok {
 		c.JSON(http.StatusInternalServerError, APIResponse{
 			Status:  "error",
-			Message: "Коллекция отзывов не инициализирована",
+			Message: "Подключение к базе данных недоступно",
 		})
 		return
 	}
@@ -73,7 +75,7 @@ func CreateReviewHandler(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if _, err := reviewsCollection.InsertOne(ctx, review); err != nil {
+	if _, err := collection.InsertOne(ctx, review); err != nil {
 		c.JSON(http.StatusInternalServerError, APIResponse{
 			Status:  "error",
 			Message: "Не удалось сохранить отзыв. Попробуйте позже.",
@@ -89,11 +91,12 @@ func CreateReviewHandler(c *gin.Context) {
 }
 
 // GET /api/reviews/getReviews
-func GetReviewsHandler(c *gin.Context) {
-	if reviewsCollection == nil {
+func GetReviewsHandler(db *mongo.Database, c *gin.Context) {
+	collection, ok := getReviewsCollection(db)
+	if !ok {
 		c.JSON(http.StatusInternalServerError, APIResponse{
 			Status:  "error",
-			Message: "Коллекция отзывов не инициализирована",
+			Message: "Подключение к базе данных недоступно",
 		})
 		return
 	}
@@ -103,7 +106,7 @@ func GetReviewsHandler(c *gin.Context) {
 
 	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
 
-	cursor, err := reviewsCollection.Find(ctx, bson.M{}, opts)
+	cursor, err := collection.Find(ctx, bson.M{}, opts)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, APIResponse{
 			Status:  "error",

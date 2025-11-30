@@ -9,7 +9,7 @@ a {
 }
 
 button {
-text-decoration: none;
+    text-decoration: none;
 }
 
 .App {
@@ -52,7 +52,7 @@ text-decoration: none;
 
 .topBar {
     display: flex;
-    position: sticky;
+    position: fixed;
     align-items: center;
     justify-content: space-between;
     padding: 0.5rem 2rem;

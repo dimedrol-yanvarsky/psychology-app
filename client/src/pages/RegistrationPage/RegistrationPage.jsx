@@ -4,8 +4,9 @@ import styles from "./RegistrationPage.module.css";
 import { Link, useNavigate } from "react-router-dom";
 import { generateStrongPassword } from "./passwordGenerator";
 
-const RegistrationPage = () => {
+const RegistrationPage = ({ showAlert }) => {
     const [login, setLogin] = useState("");
+    const [name, setName] = useState("");
     const [password, setPassword] = useState("");
     const [passwordRepeated, setPasswordRepeated] = useState("");
     const [message, setMessage] = useState("");
@@ -37,22 +38,43 @@ const RegistrationPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!(name && login && password && passwordRepeated)) {
+            return showAlert("error", "Не оставляйте поля пустыми");
+        }
+
+        if (password !== passwordRepeated) {
+            return showAlert("error", "Пароли отличаются");
+        }
+
         try {
-            const response = await axios.post(
-                "http://localhost:8080/api/login",
+            const {response} = await axios.post(
+                "http://localhost:8080/api/createAccount",
                 {
+                    name,
                     login,
                     password,
+                    passwordRepeated,
                 }
             );
-
-            if (response.data.success) {
-                localStorage.setItem("token", response.data.token);
-                window.location.href = "/dashboard";
+            console.log(1, response);
+            if (response.success) {
+                showAlert("success", "Аккаунт зарегистрирован");
+                navigate("/login");
             }
-            setMessage(response.data.message);
         } catch (error) {
-            setMessage("Ошибка авторизации");
+            if (error.status === 409) {
+                return showAlert("error", "Аккаунт уже существует");
+            }
+            if (error.status === 403) {
+                return showAlert("error", "Доступ запрещен");
+            }
+            if (error.status === 401) {
+                return showAlert("error", "Проверьте введенные данные");
+            }
+             if (error.status === 500) {
+                return showAlert("error", "База данных недоступна");
+            }
         }
     };
 
@@ -64,15 +86,22 @@ const RegistrationPage = () => {
         <div className={styles.page}>
             <div className={styles.layout}>
                 <section className={styles.introCard}>
-                    <p className={styles.overline}>Старт для новых пользователей</p>
-                    <h1 className={styles.title}>Создайте аккаунт и продолжайте работу над собой</h1>
+                    <p className={styles.overline}>
+                        Старт для новых пользователей
+                    </p>
+                    <h1 className={styles.title}>
+                        Создайте аккаунт и продолжайте работу над собой
+                    </h1>
                     <p className={styles.subtitle}>
-                        Сохраняем подборки рекомендаций, результаты тестов и личные цели. Зарегистрируйтесь,
-                        чтобы ничего не потерять и возвращаться к прогрессу в один клик.
+                        Сохраняем подборки рекомендаций, результаты тестов и
+                        личные цели. Зарегистрируйтесь, чтобы ничего не потерять
+                        и возвращаться к прогрессу в один клик.
                     </p>
                     <div className={styles.pills}>
                         <span className={styles.pill}>Личный кабинет</span>
-                        <span className={styles.pill}>Сохранение прогресса</span>
+                        <span className={styles.pill}>
+                            Сохранение прогресса
+                        </span>
                         <span className={styles.pill}>Поддержка 24/7</span>
                     </div>
                 </section>
@@ -81,14 +110,21 @@ const RegistrationPage = () => {
                     <div className={styles.registerHeader}>
                         <span className={styles.badge}>Регистрация</span>
                         <div>
-                            <h3 className={styles.cardTitle}>Создайте аккаунт за пару шагов</h3>
+                            <h3 className={styles.cardTitle}>
+                                Создайте аккаунт за пару шагов
+                            </h3>
                             <p className={styles.cardSubtitle}>
-                                Заполните форму ниже. Можно сгенерировать надежный пароль прямо здесь.
+                                Заполните форму ниже. Можно сгенерировать
+                                надежный пароль прямо здесь.
                             </p>
                         </div>
                     </div>
 
-                    <form onSubmit={handleSubmit} className={styles.form} noValidate>
+                    <form
+                        onSubmit={handleSubmit}
+                        className={styles.form}
+                        noValidate
+                    >
                         <label className={styles.label} htmlFor="name">
                             Как Вас зовут?
                         </label>
@@ -96,8 +132,8 @@ const RegistrationPage = () => {
                             className={styles.input}
                             type="text"
                             id="name"
-                            value={login}
-                            onChange={(e) => setLogin(e.target.value)}
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
                             placeholder="Введите имя"
                             required
                         />
@@ -137,9 +173,14 @@ const RegistrationPage = () => {
                             placeholder="Введите пароль"
                             required
                         />
-                        <p className={styles.helperText}>Используйте буквы, цифры и символы для надежности.</p>
+                        <p className={styles.helperText}>
+                            Используйте буквы, цифры и символы для надежности.
+                        </p>
 
-                        <label className={styles.label} htmlFor="password-repeat">
+                        <label
+                            className={styles.label}
+                            htmlFor="password-repeat"
+                        >
                             Повторите пароль
                         </label>
                         <input
@@ -147,7 +188,9 @@ const RegistrationPage = () => {
                             type={showPassword ? "text" : "password"}
                             id="password-repeat"
                             value={passwordRepeated}
-                            onChange={(e) => setPasswordRepeated(e.target.value)}
+                            onChange={(e) =>
+                                setPasswordRepeated(e.target.value)
+                            }
                             placeholder="Повторите пароль"
                             required
                         />

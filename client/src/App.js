@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
     BrowserRouter as Router,
     Routes,
@@ -15,9 +15,11 @@ import "./App.css";
 import ReviewsPage from "./pages/ReviewsPage/ReviewsPage";
 import AlertMessage from "./components/AlertMessage/AlertMessage";
 import Terminal from "./components/Terminal/Terminal";
-
+import TreePage from "./pages/TreePage/TreePage";
 
 function App() {
+    let alertTimerRef = useRef(null);
+
     const [statusAlert, setStatusAlert] = useState("");
     const [messageAlert, setMessageAlert] = useState("");
 
@@ -31,20 +33,25 @@ function App() {
         "/recommendations",
         "/tests",
         "/reviews",
+        "/tree"
     ];
 
     const [profileData, setProfileData] = useState({
         id: null,
         firstName: "",
-        lastName: "",
         email: "",
-        psychotype: "",
+        status: "",
+        psychoType: "",
+        date: "",
+        isGoogleAdded: false,
+        isYandexAdded: false
     });
 
     const showAlert = (status, message) => {
+        clearTimeout(alertTimerRef);
         setStatusAlert(status);
         setMessageAlert(message);
-        setTimeout(() => {
+        alertTimerRef = setTimeout(() => {
             setStatusAlert("");
             setMessageAlert("");
         }, 3000);
@@ -148,7 +155,7 @@ function App() {
                             />
                         )}
                     />
-                     <Route
+                    <Route
                         path="/terminal"
                         element={
                             <Terminal
@@ -157,6 +164,10 @@ function App() {
                                 isAuth={isAuth}
                             />
                         }
+                    />
+                    <Route
+                        path="/tree"
+                        element={<TreePage />}
                     />
                 </Routes>
             </div>

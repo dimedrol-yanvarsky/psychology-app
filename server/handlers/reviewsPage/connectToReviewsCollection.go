@@ -2,10 +2,12 @@ package reviewsPage
 
 import "go.mongodb.org/mongo-driver/mongo"
 
-// внутренняя переменная пакета — сюда положим коллекцию из main.go
-var reviewsCollection *mongo.Collection
+const reviewsCollectionName = "Review"
 
-// InitReviews вызывается из main.go один раз на старте приложения.
-func InitReviews(collection *mongo.Collection) {
-	reviewsCollection = collection
+// Возвращает коллекцию отзывов из переданной базы данных.
+func getReviewsCollection(db *mongo.Database) (*mongo.Collection, bool) {
+	if db == nil {
+		return nil, false
+	}
+	return db.Collection(reviewsCollectionName), true
 }

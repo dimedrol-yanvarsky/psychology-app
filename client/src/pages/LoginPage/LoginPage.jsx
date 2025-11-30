@@ -36,30 +36,42 @@ const LoginPage = ({ showAlert, setIsAdmin, setIsAuth, setProfileData }) => {
 
         if (!email || !password) {
             showAlert("error", "Не оставляйте поля пустыми");
-            console.log("hi");
             return;
         }
 
         try {
-            const { data } = await axios.post(`${loginApiBase}/password`, {
+            const response = await axios.post(`${loginApiBase}/password`, {
                 email,
                 password,
             });
 
-            if (data.status === "Администратор") {
+            if (response.data.status === "Администратор") {
                 setIsAdmin(true);
             }
 
-            console.log(data);
-            setProfileData(data)
+            setProfileData(response.data);
 
+            console.log(response)
             setIsAuth(true);
             showAlert("success", "Авторизация успешна");
             navigate("/account");
         } catch (error) {
+            console.log(error);
             if (error.status === 401) {
-                showAlert("error", "Логин или пароль неверный");
-            } else showAlert("error", "Не оставляйте поля пустыми");
+                return showAlert("error", "Пароль неверный");
+            }
+            if (error.status === 500) {
+                return showAlert("error", "База данных не отвечает");
+            }
+            if (error.status === 404) {
+                return showAlert("error", "Пользователь не найден");
+            }
+            if (error.status === 400) {
+                return showAlert("error", "Введите корректные данные");
+            }
+            if (error.status === 403) {
+                return showAlert("error", "Доступ заблокирован");
+            }
         }
     };
 
@@ -72,7 +84,7 @@ const LoginPage = ({ showAlert, setIsAdmin, setIsAuth, setProfileData }) => {
                 return;
             }
 
-            showAlert("success","Авторизация выполнена");
+            showAlert("success", "Авторизация выполнена");
             navigate("/account");
         } catch (error) {
             showAlert(
