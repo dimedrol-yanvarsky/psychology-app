@@ -1,93 +1,139 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import axios from "axios";
-import styles from "./ReviewsPage.module.css"; // можно назвать и просто module.css
+import styles from "./ReviewsPage.module.css";
 
 const api = axios.create({
     baseURL: "http://localhost:8080/api",
 });
 
-const initialReviews = [
-    {
-        id: "seed-1",
-        name: "Анна Иванова",
-        text: "Очень понравился сервис: быстрые ответы поддержки и удобный интерфейс. Буду рекомендовать коллегам!",
-        createdAt: "2024-05-10T12:00:00.000Z",
-    },
-    {
-        id: "seed-2",
-        name: "Дмитрий Петров",
-        text: "Хороший опыт: всё работает стабильно, а новые функции появляются регулярно. Спасибо команде разработчиков!",
-        createdAt: "2024-05-05T09:30:00.000Z",
-    },
-];
+const STATUS_MODERATING = "Модерируется";
+const STATUS_APPROVED = "Добавлен";
+const STATUS_DENIED = "Отклонен";
 
-const ReviewsPage = (props) => {
-    const [reviews, setReviews] = useState(initialReviews);
-    const [form, setForm] = useState({
-        name: "",
-        text: "",
-    });
+const getReviewId = (review) => review?._id || review?.id || "";
+const getAuthorId = (review) => review?.userID || review?.userId || "";
+const getReviewBody = (review) => review?.reviewBody || review?.text || "";
+
+const ReviewsPage = ({
+    showAlert,
+    isAdmin = false,
+    isAuth = false,
+    profileData = {},
+}) => {
+    const [reviews, setReviews] = useState([]);
+    const [form, setForm] = useState({ text: "" });
     const [submitting, setSubmitting] = useState(false);
     const [hasSubmitted, setHasSubmitted] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
-    const [showPosts, setShowPosts] = useState(initialReviews.length > 0);
+    const [showPosts, setShowPosts] = useState(false);
+    const [editingReviewId, setEditingReviewId] = useState("");
+    const [editingText, setEditingText] = useState("");
+    const [loadingIds, setLoadingIds] = useState({});
+    const [isLoadingReviews, setIsLoadingReviews] = useState(false);
 
-    useEffect(() => {
-        // проверяем, оставлял ли текущий пользователь отзыв (простая реализация через localStorage)
-        const storedFlag =
-            localStorage.getItem("hasSubmittedReview") === "true";
-        setHasSubmitted(storedFlag);
+    const currentUserId = (profileData?.id || "").trim();
 
-        fetchReviews();
-    }, []);
-
-    const fetchReviews = async () => {
-        try {
-            const response = await api.get("/reviews");
-            if (response.data && Array.isArray(response.data.reviews)) {
-                setReviews(response.data.reviews);
-                setShowPosts(response.data.reviews.length > 0);
+    const setReviewLoading = (reviewId, value) => {
+        setLoadingIds((prev) => {
+            const next = { ...prev };
+            if (value) {
+                next[reviewId] = true;
+            } else {
+                delete next[reviewId];
             }
-        } catch (error) {
-            console.error("Не удалось загрузить отзывы", error);
-        }
+            return next;
+        });
     };
 
+    const isReviewLoading = (reviewId) => Boolean(loadingIds[reviewId]);
+
+    const filterVisibleReviews = (list) =>
+        Array.isArray(list)
+            ? isAdmin
+                ? list
+                : list.filter(
+                        (review) =>
+                            (review?.status || "").trim() === STATUS_APPROVED
+                  )
+            : [];
+
+    const fetchReviews = useCallback(async () => {
+        setIsLoadingReviews(true);
+        try {
+            const response = await api.get("/reviews/getReviews");
+            const loadedReviews = Array.isArray(response?.data?.reviews)
+                ? response.data.reviews
+                : [];
+            setReviews(loadedReviews);
+        } catch (error) {
+            console.error("Не удалось загрузить отзывы", error);
+            showAlert?.(
+                "error",
+                error?.response?.data?.message ||
+                    "Не удалось загрузить отзывы"
+            );
+        } finally {
+            setIsLoadingReviews(false);
+        }
+    }, [showAlert]);
+
+    useEffect(() => {
+        fetchReviews();
+    }, [fetchReviews]);
+
+    useEffect(() => {
+        const visible = filterVisibleReviews(reviews);
+        setShowPosts(visible.length > 0);
+
+        if (isAuth && currentUserId) {
+            const userHasReview = reviews.some(
+                (review) => getAuthorId(review) === currentUserId
+            );
+            setHasSubmitted(userHasReview);
+        } else {
+            setHasSubmitted(false);
+        }
+    }, [reviews, isAdmin, isAuth, currentUserId]);
+
     const handleChange = (event) => {
-        const { name, value } = event.target;
-        setForm((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
+        setForm({ text: event.target.value });
     };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
         if (submitting) return;
 
+        if (!isAuth) {
+            showAlert?.("error", "Авторизуйтесь, чтобы оставить отзыв");
+            return;
+        }
+
+        if (!currentUserId) {
+            showAlert?.("error", "Не удалось определить пользователя");
+            return;
+        }
+
+        const body = form.text.trim();
+        if (!body) {
+            showAlert?.("error", "Заполните текст отзыва");
+            return;
+        }
+
         setSubmitting(true);
         try {
-            const response = await api.post("/reviews", form);
-
-            if (response.data?.review) {
-                // добавляем новый отзыв в начало списка
-                setReviews((prev) => {
-                    const next = [response.data.review, ...prev];
-                    setShowPosts(next.length > 0);
-                    return next;
-                });
-            }
-
-            setHasSubmitted(true);
-            localStorage.setItem("hasSubmittedReview", "true");
-
-            setForm({
-                name: "",
-                text: "",
+            const response = await api.post("/reviews/createReview", {
+                userId: currentUserId,
+                reviewBody: body,
             });
+
+            if (response?.data?.review) {
+                setReviews((prev) => [response.data.review, ...prev]);
+                setForm({ text: "" });
+                showAlert?.("success", "Отзыв отправлен на модерацию");
+            }
         } catch (error) {
-            console.error(
-                error.response?.data?.message ||
+            showAlert?.(
+                "error",
+                error?.response?.data?.message ||
                     "Произошла ошибка при отправке отзыва. Попробуйте ещё раз."
             );
         } finally {
@@ -95,180 +141,359 @@ const ReviewsPage = (props) => {
         }
     };
 
+    const handleDelete = async (review) => {
+        const reviewId = getReviewId(review);
+        if (!reviewId) return;
+
+        setReviewLoading(reviewId, true);
+        try {
+            await api.post("/reviews/deleteReview", {
+                reviewId,
+                userId: currentUserId,
+                isAdmin,
+            });
+
+            setReviews((prev) =>
+                prev.filter((item) => getReviewId(item) !== reviewId)
+            );
+            showAlert?.("success", "Отзыв удален");
+        } catch (error) {
+            showAlert?.(
+                "error",
+                error?.response?.data?.message || "Не удалось удалить отзыв"
+            );
+        } finally {
+            setReviewLoading(reviewId, false);
+        }
+    };
+
+    const handleModerationDecision = async (reviewId, decision) => {
+        if (!reviewId) return;
+        if (!currentUserId) {
+            showAlert?.("error", "Не удалось определить администратора");
+            return;
+        }
+
+        setReviewLoading(reviewId, true);
+
+        try {
+            const response = await api.post("/reviews/approveOrDeny", {
+                reviewId,
+                adminId: currentUserId,
+                decision,
+            });
+
+            if (response?.data?.review) {
+                setReviews((prev) =>
+                    prev.map((item) =>
+                        getReviewId(item) === reviewId
+                            ? { ...item, ...response.data.review }
+                            : item
+                    )
+                );
+                showAlert?.(
+                    "success",
+                    decision === "approve"
+                        ? "Отзыв принят"
+                        : "Отзыв отклонен"
+                );
+            }
+        } catch (error) {
+            showAlert?.(
+                "error",
+                error?.response?.data?.message ||
+                    "Не удалось обновить статус отзыва"
+            );
+        } finally {
+            setReviewLoading(reviewId, false);
+        }
+    };
+
+    const handleStartEdit = (review) => {
+        const reviewId = getReviewId(review);
+        if (!reviewId) return;
+        setEditingReviewId(reviewId);
+        setEditingText(getReviewBody(review));
+    };
+
+    const handleCancelEdit = () => {
+        setEditingReviewId("");
+        setEditingText("");
+    };
+
+    const handleSaveEdit = async (reviewId) => {
+        if (!reviewId) return;
+        if (!currentUserId) {
+            showAlert?.("error", "Не удалось определить пользователя");
+            return;
+        }
+
+        const body = editingText.trim();
+        if (!body) {
+            showAlert?.("error", "Введите текст отзыва");
+            return;
+        }
+
+        setReviewLoading(reviewId, true);
+
+        try {
+            const response = await api.post("/reviews/updateReview", {
+                reviewId,
+                userId: currentUserId,
+                reviewBody: body,
+            });
+
+            if (response?.data?.review) {
+                setReviews((prev) =>
+                    prev.map((item) =>
+                        getReviewId(item) === reviewId
+                            ? { ...item, ...response.data.review }
+                            : item
+                    )
+                );
+                showAlert?.("success", "Отзыв обновлен");
+                handleCancelEdit();
+            }
+        } catch (error) {
+            showAlert?.(
+                "error",
+                error?.response?.data?.message || "Не удалось обновить отзыв"
+            );
+        } finally {
+            setReviewLoading(reviewId, false);
+        }
+    };
+
     const formatDate = (value) => {
         if (!value) return "";
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) return "";
-        return date.toLocaleDateString("ru-RU", {
+        const trimmed = String(value).trim();
+
+        if (/^\d{2}\.\d{2}\.\d{4}$/.test(trimmed)) {
+            return trimmed;
+        }
+
+        const parsed = new Date(trimmed);
+        if (Number.isNaN(parsed.getTime())) {
+            return trimmed;
+        }
+
+        return parsed.toLocaleDateString("ru-RU", {
             day: "2-digit",
             month: "2-digit",
             year: "numeric",
         });
     };
 
+    const visibleReviews = filterVisibleReviews(reviews);
+
     return (
         <div className={styles.page}>
-            <header className={styles.topBar}>
-                <div className={styles.topBarActions}>
-                    <button
-                        type="button"
-                        className={`${styles.actionButton} ${styles.deleteButton}`}
-                        onClick={() => {
-                            setReviews([]);
-                            setShowPosts(false);
-                        }}
-                    >
-                        Шаблон кнопки №1
-                    </button>
-                    <button
-                        type="button"
-                        className={`${styles.actionButton} ${styles.secondaryEditButton}`}
-                        onClick={() => setIsEditing((prev) => !prev)}
-                    >
-                        Шаблон кнопки №2
-                    </button>
-                </div>
-            </header>
-
             <main className={styles.main}>
                 <section className={styles.reviewsSection}>
-                    {!showPosts ? (
+                    {isLoadingReviews ? (
+                        <div className={styles.emptyStateBanner}>
+                            Загружаем отзывы...
+                        </div>
+                    ) : !showPosts ? (
                         <div className={styles.emptyStateBanner}>
                             Пока нет ни одного отзыва. Станьте первым!
                         </div>
                     ) : (
                         <div className={styles.reviewsList}>
-                            {reviews.map((review) => (
-                                <article
-                                    key={review.id || review._id}
-                                    className={`${styles.reviewCard} ${
-                                        isEditing
-                                            ? styles.reviewCardEditing
-                                            : ""
-                                    }`}
-                                >
-                                    <header className={styles.reviewHeader}>
-                                        <span className={styles.reviewAuthor}>
-                                            {review.name}
-                                        </span>
-                                        <span className={styles.reviewDate}>
-                                            {formatDate(
-                                                review.createdAt || review.date
-                                            )}
-                                        </span>
-                                    </header>
-                                    <p className={styles.reviewText}>
-                                        {review.text}
-                                    </p>
-                                    <div className={styles.reviewActions}>
-                                        {props.isAdmin === true ? (
-                                            <>
-                                                <button
-                                                    type="button"
-                                                    className={`${styles.reviewActionButton} ${styles.reviewDeleteButton}`}
-                                                    onClick={() => {
-                                                        const id =
-                                                            review.id ||
-                                                            review._id;
-                                                        setReviews((prev) => {
-                                                            const next =
-                                                                prev.filter(
-                                                                    (item) =>
-                                                                        (item.id ||
-                                                                            item._id) !==
-                                                                        id
-                                                                );
-                                                            setShowPosts(
-                                                                next.length > 0
-                                                            );
-                                                            return next;
-                                                        });
-                                                    }}
-                                                >
-                                                    Удалить отзыв
-                                                </button>
+                            {visibleReviews.map((review) => {
+                                const reviewId = getReviewId(review);
+                                const authorId = getAuthorId(review);
+                                const isOwnReview =
+                                    currentUserId && authorId === currentUserId;
+                                const inModeration =
+                                    (review?.status || "").trim() ===
+                                    STATUS_MODERATING;
+                                const isEditingCurrent =
+                                    editingReviewId === reviewId;
+                                const isActionLoading =
+                                    isReviewLoading(reviewId);
+
+                                return (
+                                    <article
+                                        key={reviewId}
+                                        className={`${styles.reviewCard} ${
+                                            isAdmin && inModeration
+                                                ? styles.reviewCardModerating
+                                                : ""
+                                        }`}
+                                    >
+                                        <header className={styles.reviewHeader}>
+                                            <span
+                                                className={styles.reviewAuthor}
+                                            >
+                                                {review?.firstName || "Аноним"}
+                                            </span>
+                                            <span
+                                                className={styles.reviewDate}
+                                            >
+                                                {formatDate(
+                                                    review?.date ||
+                                                        review?.createdAt
+                                                )}
+                                            </span>
+                                        </header>
+
+                                        {isEditingCurrent ? (
+                                            <div className={styles.editRow}>
+                                                <input
+                                                    type="text"
+                                                    value={editingText}
+                                                    onChange={(event) =>
+                                                        setEditingText(
+                                                            event.target.value
+                                                        )
+                                                    }
+                                                    className={styles.editInput}
+                                                />
                                                 <button
                                                     type="button"
                                                     className={`${styles.reviewActionButton} ${styles.reviewEditButton}`}
                                                     onClick={() =>
-                                                        setIsEditing(
-                                                            (prev) => !prev
+                                                        handleSaveEdit(
+                                                            reviewId
                                                         )
                                                     }
+                                                    disabled={isActionLoading}
                                                 >
-                                                    {isEditing
-                                                        ? "Закончить редактирование"
-                                                        : "Редактировать"}
+                                                    Сохранить
                                                 </button>
-                                            </>
+                                                <button
+                                                    type="button"
+                                                    className={`${styles.reviewActionButton} ${styles.reviewDeleteButton}`}
+                                                    onClick={handleCancelEdit}
+                                                    disabled={isActionLoading}
+                                                >
+                                                    Отмена
+                                                </button>
+                                            </div>
                                         ) : (
-                                            <></>
+                                            <p className={styles.reviewText}>
+                                                {getReviewBody(review)}
+                                            </p>
                                         )}
-                                    </div>
-                                </article>
-                            ))}
+
+                                        <div className={styles.reviewActions}>
+                                            {isAdmin && inModeration ? (
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        className={`${styles.reviewActionButton} ${styles.reviewEditButton}`}
+                                                        onClick={() =>
+                                                            handleModerationDecision(
+                                                                reviewId,
+                                                                "approve"
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            isActionLoading
+                                                        }
+                                                    >
+                                                        Принять отзыв
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className={`${styles.reviewActionButton} ${styles.reviewDeleteButton}`}
+                                                        onClick={() =>
+                                                            handleModerationDecision(
+                                                                reviewId,
+                                                                "deny"
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            isActionLoading
+                                                        }
+                                                    >
+                                                        Отклонить
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    {(isAdmin || isOwnReview) && (
+                                                        <button
+                                                            type="button"
+                                                            className={`${styles.reviewActionButton} ${styles.reviewDeleteButton}`}
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    review
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                isActionLoading
+                                                            }
+                                                        >
+                                                            Удалить отзыв
+                                                        </button>
+                                                    )}
+                                                    {isOwnReview && (
+                                                        <button
+                                                            type="button"
+                                                            className={`${styles.reviewActionButton} ${styles.reviewEditButton}`}
+                                                            onClick={() =>
+                                                                handleStartEdit(
+                                                                    review
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                isActionLoading
+                                                            }
+                                                        >
+                                                            Редактировать
+                                                        </button>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                    </article>
+                                );
+                            })}
                         </div>
                     )}
                 </section>
 
-                {/* Средний уровень: форма добавления отзыва (если ещё не добавлен) */}
-
-                {props.isAuth === true ? (
+                {isAuth && !hasSubmitted && (
                     <section className={styles.formSection}>
-                        {!hasSubmitted ? (
-                            <form
-                                className={styles.form}
-                                onSubmit={handleSubmit}
-                            >
-                                <h2 className={styles.formTitle}>
-                                    Оставьте отзыв о сервисе
-                                </h2>
+                        <form className={styles.form} onSubmit={handleSubmit}>
+                            <h2 className={styles.formTitle}>
+                                Оставьте отзыв о сервисе
+                            </h2>
 
-                                <div className={styles.field}>
-                                    <label htmlFor="name">Имя</label>
-                                    <input
-                                        id="name"
-                                        name="name"
-                                        type="text"
-                                        value={form.name}
-                                        onChange={handleChange}
-                                        placeholder="Например, Иван"
-                                        required
-                                    />
-                                </div>
-
-                                <div className={styles.field}>
-                                    <label htmlFor="text">Ваш отзыв</label>
-                                    <textarea
-                                        id="text"
-                                        name="text"
-                                        rows="4"
-                                        value={form.text}
-                                        onChange={handleChange}
-                                        placeholder="Поделитесь своим опытом..."
-                                        required
-                                    />
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    className={styles.reviewActionButton}
-                                    disabled={submitting}
-                                >
-                                    {submitting
-                                        ? "Отправка..."
-                                        : "Отправить отзыв"}
-                                </button>
-                            </form>
-                        ) : (
-                            <div className={styles.alreadySubmitted}>
-                                <h2>Спасибо за отзыв!</h2>
-                                <p>Вы уже оставили отзыв о сервисе.</p>
+                            <div className={styles.field}>
+                                <label htmlFor="text">Ваш отзыв</label>
+                                <textarea
+                                    id="text"
+                                    name="text"
+                                    rows="4"
+                                    value={form.text}
+                                    onChange={handleChange}
+                                    placeholder="Поделитесь своим опытом..."
+                                    required
+                                    className={styles.wideTextarea}
+                                />
                             </div>
-                        )}
+
+                            <button
+                                type="submit"
+                                className={styles.submitButton}
+                                disabled={submitting}
+                            >
+                                {submitting
+                                    ? "Отправка..."
+                                    : "Отправить отзыв"}
+                            </button>
+                        </form>
                     </section>
-                ) : (
-                    <></>
+                )}
+
+                {isAuth && hasSubmitted && (
+                    <div className={styles.alreadySubmitted}>
+                        <h2>Спасибо за отзыв!</h2>
+                        <p>Вы уже оставили отзыв о сервисе.</p>
+                    </div>
                 )}
             </main>
         </div>

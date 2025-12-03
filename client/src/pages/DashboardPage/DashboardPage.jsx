@@ -24,6 +24,10 @@ const DashboardPage = ({
         profileData?.status === "Администратор"
     );
     const [adminListError, setAdminListError] = useState("");
+    const [blockingUsers, setBlockingUsers] = useState({});
+    const [deletingUsers, setDeletingUsers] = useState({});
+    const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+    const [isSavingProfile, setIsSavingProfile] = useState(false);
     const [answersModal, setAnswersModal] = useState({
         open: false,
         loading: false,
@@ -81,12 +85,88 @@ const DashboardPage = ({
         setProfileData((prev) => ({ ...prev, [field]: value }));
     };
 
-    const handleProfileSave = (event) => {
+    const handleProfileSave = async (event) => {
         event.preventDefault();
-        setUser((prev) => ({ ...(prev || {}), ...profileData }));
 
-        if (showAlert) {
-            showAlert("success", "Данные профиля обновлены");
+        if (isSavingProfile) {
+            return;
+        }
+
+        const userId = profileData?.id;
+        const firstName = (profileData?.firstName || "").trim();
+
+        if (!userId) {
+            showAlert &&
+                showAlert(
+                    "error",
+                    "Не указан идентификатор пользователя для обновления"
+                );
+            return;
+        }
+
+        if (!firstName) {
+            showAlert &&
+                showAlert("error", "Введите имя, чтобы сохранить изменения");
+            return;
+        }
+
+        setIsSavingProfile(true);
+
+        try {
+            const { data } = await axios.post(
+                `${dashboardApiBase}/change-user-data`,
+                {
+                    userId,
+                    firstName,
+                }
+            );
+
+            if (data?.status === "success") {
+                const updatedUser = data?.user || {};
+
+                setProfileData((prev) => ({
+                    ...prev,
+                    id: updatedUser.id || userId,
+                    firstName: updatedUser.firstName || firstName,
+                    email: updatedUser.email || prev.email,
+                    status: updatedUser.status || prev.status,
+                }));
+
+                setUser((prev) => ({
+                    ...(prev || {}),
+                    id: updatedUser.id || userId,
+                    firstName: updatedUser.firstName || firstName,
+                    email:
+                        updatedUser.email ||
+                        (prev && prev.email) ||
+                        profileData.email,
+                    status:
+                        updatedUser.status ||
+                        (prev && prev.status) ||
+                        profileData.status,
+                }));
+
+                showAlert &&
+                    showAlert(
+                        "success",
+                        data?.message || "Данные профиля обновлены"
+                    );
+            } else {
+                showAlert &&
+                    showAlert(
+                        "error",
+                        data?.message || "Не удалось сохранить изменения"
+                    );
+            }
+        } catch (error) {
+            const message =
+                error?.response?.data?.message ||
+                error?.message ||
+                "Не удалось сохранить изменения";
+
+            showAlert && showAlert("error", message);
+        } finally {
+            setIsSavingProfile(false);
         }
     };
 
@@ -104,8 +184,67 @@ const DashboardPage = ({
         navigate("/login");
     };
 
-    const handleDeleteAccount = () => {
-        showAlert("error", "Удаление аккаунта будет доступно позже");
+    const handleDeleteAccount = async () => {
+        if (isDeletingAccount) {
+            return;
+        }
+
+        if (!profileData?.id) {
+            showAlert &&
+                showAlert(
+                    "error",
+                    "Не указан идентификатор пользователя для удаления"
+                );
+            return;
+        }
+
+        setIsDeletingAccount(true);
+
+        try {
+            const { data } = await axios.post(
+                `${dashboardApiBase}/delete-account`,
+                {
+                    userId: profileData.id,
+                }
+            );
+
+            if (data?.status === "success") {
+                setIsAdmin(false);
+                setIsAuth(false);
+                setUser(null);
+                setProfileData({
+                    id: null,
+                    firstName: "",
+                    lastName: "",
+                    email: "",
+                    status: "",
+                    psychoType: "",
+                    date: "",
+                    isGoogleAdded: false,
+                    isYandexAdded: false,
+                });
+
+                showAlert &&
+                    showAlert("success", data?.message || "Аккаунт удален");
+
+                navigate(data?.redirect || "/login", { replace: true });
+            } else {
+                showAlert &&
+                    showAlert(
+                        "error",
+                        data?.message || "Не удалось удалить аккаунт"
+                    );
+            }
+        } catch (error) {
+            const message =
+                error?.response?.data?.message ||
+                error?.message ||
+                "Не удалось удалить аккаунт";
+
+            showAlert && showAlert("error", message);
+        } finally {
+            setIsDeletingAccount(false);
+        }
     };
 
     const handleChangePassword = () => {
@@ -131,11 +270,162 @@ const DashboardPage = ({
     };
 
     const handleAdminAction = (action, account) => {
-        if (showAlert) {
-            showAlert(
-                "success",
-                `${action} для ${account.firstName} запрошено`
+        return (
+            showAlert &&
+            showAlert("error", `${action} для ${account.email} недоступно`)
+        );
+    };
+
+    const handleBlockUser = async (account) => {
+        if (!profileData?.id) {
+            showAlert &&
+                showAlert(
+                    "error",
+                    "Не указан идентификатор администратора для запроса"
+                );
+            return;
+        }
+
+        const targetId = account?.id;
+        const status = (account?.status || "").trim();
+
+        if (!targetId) {
+            showAlert &&
+                showAlert(
+                    "error",
+                    "Не удалось определить пользователя для блокировки"
+                );
+            return;
+        }
+
+        if (status === "Заблокирован" || status === "Удален") {
+            return;
+        }
+
+        setBlockingUsers((prev) => ({ ...prev, [targetId]: true }));
+
+        try {
+            const { data } = await axios.post(
+                `${dashboardApiBase}/block-user`,
+                {
+                    adminId: profileData.id,
+                    targetUserId: targetId,
+                }
             );
+
+            if (data?.status === "success") {
+                setAdminAccounts((prev) =>
+                    prev.map((user) =>
+                        user.id === targetId
+                            ? {
+                                  ...user,
+                                  status:
+                                      data?.user?.status || "Заблокирован",
+                              }
+                            : user
+                    )
+                );
+
+                showAlert &&
+                    showAlert(
+                        "success",
+                        data?.message || "Пользователь заблокирован"
+                    );
+            } else {
+                showAlert &&
+                    showAlert(
+                        "error",
+                        data?.message ||
+                            "Не удалось заблокировать пользователя"
+                    );
+            }
+        } catch (error) {
+            const message =
+                error?.response?.data?.message ||
+                error?.message ||
+                "Не удалось заблокировать пользователя";
+
+            showAlert && showAlert("error", message);
+        } finally {
+            setBlockingUsers((prev) => {
+                const updated = { ...prev };
+                delete updated[targetId];
+                return updated;
+            });
+        }
+    };
+
+    const handleDeleteUser = async (account) => {
+        if (!profileData?.id) {
+            showAlert &&
+                showAlert(
+                    "error",
+                    "Не указан идентификатор администратора для запроса"
+                );
+            return;
+        }
+
+        const targetId = account?.id;
+        const status = (account?.status || "").trim();
+
+        if (!targetId) {
+            showAlert &&
+                showAlert(
+                    "error",
+                    "Не удалось определить пользователя для удаления"
+                );
+            return;
+        }
+
+        if (status === "Удален") {
+            return;
+        }
+
+        setDeletingUsers((prev) => ({ ...prev, [targetId]: true }));
+
+        try {
+            const { data } = await axios.post(
+                `${dashboardApiBase}/delete-user`,
+                {
+                    adminId: profileData.id,
+                    targetUserId: targetId,
+                }
+            );
+
+            if (data?.status === "success") {
+                setAdminAccounts((prev) =>
+                    prev.map((user) =>
+                        user.id === targetId
+                            ? {
+                                  ...user,
+                                  status: data?.user?.status || "Удален",
+                              }
+                            : user
+                    )
+                );
+
+                showAlert &&
+                    showAlert("success", data?.message || "Пользователь удален");
+            } else {
+                showAlert &&
+                    showAlert(
+                        "error",
+                        data?.message || "Не удалось удалить пользователя"
+                    );
+            }
+        } catch (error) {
+            const message =
+                error?.response?.data?.message ||
+                error?.message ||
+                "Не удалось удалить пользователя";
+
+            showAlert && showAlert("error", message);
+        } finally {
+            setDeletingUsers((prev) => {
+                const updated = { ...prev };
+                delete updated[targetId];
+                return updated;
+            });
         }
     };
 
@@ -359,9 +649,9 @@ const DashboardPage = ({
                                 Персональные данные
                             </h3>
                             <p className={styles.cardSubtitle}>
-                                Обновляйте имя, фамилию и почту. Мы бережно
-                                храним изменения и используем их в
-                                рекомендациях.
+                                Обновляйте имя, а почта закреплена за
+                                аккаунтом. Мы бережно храним изменения и
+                                используем их в рекомендациях.
                             </p>
                         </div>
                     </div>
@@ -399,20 +689,19 @@ const DashboardPage = ({
                                 className={styles.input}
                                 type="email"
                                 value={profileData.email}
-                                onChange={(event) =>
-                                    handleFieldChange(
-                                        "email",
-                                        event.target.value
-                                    )
-                                }
                                 placeholder="example@domain.com"
+                                readOnly
+                                aria-readonly="true"
                             />
 
                             <button
                                 type="submit"
                                 className={styles.primaryButton}
+                                disabled={isSavingProfile}
                             >
-                                Сохранить изменения
+                                {isSavingProfile
+                                    ? "Сохраняем..."
+                                    : "Сохранить изменения"}
                             </button>
                         </form>
 
@@ -442,8 +731,11 @@ const DashboardPage = ({
                                     type="button"
                                     className={`${styles.cardActionButton} ${styles.cardDeleteButton}`}
                                     onClick={handleDeleteAccount}
+                                    disabled={isDeletingAccount}
                                 >
-                                    Удалить аккаунт
+                                    {isDeletingAccount
+                                        ? "Удаляем..."
+                                        : "Удалить аккаунт"}
                                 </button>
                             </div>
                         </div>
@@ -739,83 +1031,125 @@ const DashboardPage = ({
                                     Пользователи не найдены
                                 </div>
                             ) : (
-                                adminAccounts.map((account) => (
-                                    <div
-                                        key={account.id}
-                                        className={styles.adminUserCard}
-                                    >
-                                        <div className={styles.adminUserInfo}>
-                                            <div
-                                                className={styles.adminUserName}
-                                            >
-                                                {account.firstName ||
-                                                    "Без имени"}
-                                                {account.lastName
-                                                    ? ` ${account.lastName}`
-                                                    : ""}
+                                adminAccounts.map((account) => {
+                                    const status = (
+                                        account.status || ""
+                                    ).trim();
+                                    const isBlocked =
+                                        status === "Заблокирован";
+                                    const isDeleted =
+                                        status === "Удален";
+                                    const isBlocking = Boolean(
+                                        blockingUsers[account.id]
+                                    );
+                                    const isDeleting = Boolean(
+                                        deletingUsers[account.id]
+                                    );
+                                    const blockButtonClass = `${styles.secondaryButton} ${
+                                        isBlocked ||
+                                        isBlocking ||
+                                        isDeleted ||
+                                        isDeleting
+                                            ? styles.blockedButton
+                                            : ""
+                                    }`;
+                                    const deleteButtonClass = `${styles.cardActionButton} ${
+                                        isDeleted
+                                            ? styles.deletedButton
+                                            : styles.cardDeleteButton
+                                    }`;
+
+                                    return (
+                                        <div
+                                            key={account.id}
+                                            className={styles.adminUserCard}
+                                        >
+                                            <div className={styles.adminUserInfo}>
+                                                <div
+                                                    className={
+                                                        styles.adminUserName
+                                                    }
+                                                >
+                                                    {account.firstName ||
+                                                        "Без имени"}
+                                                    {account.lastName
+                                                        ? ` ${account.lastName}`
+                                                        : ""}
+                                                </div>
+                                                <div
+                                                    className={
+                                                        styles.adminUserEmail
+                                                    }
+                                                >
+                                                    {account.email || "—"}
+                                                </div>
                                             </div>
-                                            <div
-                                                className={
-                                                    styles.adminUserEmail
-                                                }
-                                            >
-                                                {account.email || "—"}
+                                            <div className={styles.adminActions}>
+                                                <button
+                                                    type="button"
+                                                    className={`${styles.cardActionButton} ${styles.cardPrimaryButton}`}
+                                                    onClick={() =>
+                                                        handleAdminAction(
+                                                            "Просмотр тестирований",
+                                                            account
+                                                        )
+                                                    }
+                                                >
+                                                    Просмотреть тестирования
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={`${styles.cardActionButton} ${styles.cardPrimaryButton}`}
+                                                    onClick={() =>
+                                                        handleAdminAction(
+                                                            "Дерево эмоций",
+                                                            account
+                                                        )
+                                                    }
+                                                >
+                                                    Дерево эмоций
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={blockButtonClass}
+                                                    onClick={() =>
+                                                        handleBlockUser(account)
+                                                    }
+                                                    disabled={
+                                                        isBlocked ||
+                                                        isBlocking ||
+                                                        isDeleted ||
+                                                        isDeleting
+                                                    }
+                                                >
+                                                    {isDeleted
+                                                        ? "Удален"
+                                                        : isBlocked
+                                                        ? "Заблокирован"
+                                                        : isBlocking
+                                                        ? "Блокируем..."
+                                                        : "Заблокировать аккаунт"}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={deleteButtonClass}
+                                                    onClick={() =>
+                                                        handleDeleteUser(account)
+                                                    }
+                                                    disabled={
+                                                        isDeleted || isDeleting
+                                                    }
+                                                >
+                                                    {isDeleted
+                                                        ? "Удален"
+                                                        : isDeleting
+                                                        ? "Удаляем..."
+                                                        : "Удалить аккаунт"}
+                                                </button>
                                             </div>
                                         </div>
-                                        <div className={styles.adminActions}>
-                                            <button
-                                                type="button"
-                                                className={`${styles.cardActionButton} ${styles.cardPrimaryButton}`}
-                                                onClick={() =>
-                                                    handleAdminAction(
-                                                        "Просмотр тестирований",
-                                                        account
-                                                    )
-                                                }
-                                            >
-                                                Просмотреть тестирования
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={`${styles.cardActionButton} ${styles.cardPrimaryButton}`}
-                                                onClick={() =>
-                                                    handleAdminAction(
-                                                        "Дерево эмоций",
-                                                        account
-                                                    )
-                                                }
-                                            >
-                                                Дерево эмоций
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={
-                                                    styles.secondaryButton
-                                                }
-                                                onClick={() =>
-                                                    handleAdminAction(
-                                                        "Блокировка аккаунта",
-                                                        account
-                                                    )
-                                                }
-                                            >
-                                                Заблокировать аккаунт
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={`${styles.cardActionButton} ${styles.cardDeleteButton}`}
-                                                onClick={() =>
-                                                    handleAdminAction(
-                                                        "Удаление аккаунта",
-                                                        account
-                                                    )
-                                                }
-                                            >
-                                                Удалить аккаунт
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
                     </section>

@@ -43,7 +43,7 @@ func setupRouter(db *mongo.Database) *gin.Engine {
 
 	// /api/createAccount (Обработчик регистрации аккаунта)
 	api.POST("/createAccount", func(c *gin.Context) {
-			registrationPage.RegistrationPageHandler(db, c)
+		registrationPage.RegistrationPageHandler(db, c)
 	})
 
 	dashboard := api.Group("/dashboard")
@@ -57,13 +57,25 @@ func setupRouter(db *mongo.Database) *gin.Engine {
 		dashboard.POST("/user-answers", func(c *gin.Context) {
 			dashboardPage.GetUserAnswersHandler(db, c)
 		})
+		dashboard.POST("/block-user", func(c *gin.Context) {
+			dashboardPage.BlockUserHandler(db, c)
+		})
+		dashboard.POST("/delete-user", func(c *gin.Context) {
+			dashboardPage.DeleteUserHandler(db, c)
+		})
+		dashboard.POST("/delete-account", func(c *gin.Context) {
+			dashboardPage.DeleteAccountHandler(db, c)
+		})
+		dashboard.POST("/change-user-data", func(c *gin.Context) {
+			dashboardPage.ChangeUserDataHandler(db, c)
+		})
 	}
 
 
 	// /api/account/...
 	// account := api.Group("/account")
 	// {
-			// account.POST("/createAccount", accountPage.CreateAccountHandler)
+	// 	account.POST("/createAccount", accountPage.CreateAccountHandler)
 	// }
 
 	// Группа маршрутов для отзывов: /api/reviews/...
@@ -76,6 +88,18 @@ func setupRouter(db *mongo.Database) *gin.Engine {
 		// /api/reviews/createReview
 		reviews.POST("/createReview", func(c *gin.Context) {
 			reviewsPage.CreateReviewHandler(db, c)
+		})
+		// /api/reviews/updateReview
+		reviews.POST("/updateReview", func(c *gin.Context) {
+			reviewsPage.UpdateReviewHandler(db, c)
+		})
+		// /api/reviews/deleteReview
+		reviews.POST("/deleteReview", func(c *gin.Context) {
+			reviewsPage.DeleteReviewHandler(db, c)
+		})
+		// /api/reviews/approveOrDeny
+		reviews.POST("/approveOrDeny", func(c *gin.Context) {
+			reviewsPage.ApproveOrDenyReviewHandler(db, c)
 		})
 	}
 

@@ -33,7 +33,7 @@ function App() {
         "/recommendations",
         "/tests",
         "/reviews",
-        "/tree"
+        "/tree",
     ];
 
     const [profileData, setProfileData] = useState({
@@ -44,10 +44,12 @@ function App() {
         psychoType: "",
         date: "",
         isGoogleAdded: false,
-        isYandexAdded: false
+        isYandexAdded: false,
     });
 
     const showAlert = (status, message) => {
+        setStatusAlert("");
+        setMessageAlert("");
         clearTimeout(alertTimerRef);
         setStatusAlert(status);
         setMessageAlert(message);
@@ -152,6 +154,7 @@ function App() {
                                 showAlert={showAlert}
                                 isAdmin={isAdmin}
                                 isAuth={isAuth}
+                                profileData={profileData}
                             />
                         )}
                     />
@@ -165,10 +168,7 @@ function App() {
                             />
                         }
                     />
-                    <Route
-                        path="/tree"
-                        element={<TreePage />}
-                    />
+                    <Route path="/tree" element={<TreePage />} />
                 </Routes>
             </div>
         </Router>

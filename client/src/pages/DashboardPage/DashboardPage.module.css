@@ -175,6 +175,21 @@
     box-shadow: 0 0.55rem 1.2rem rgba(15, 157, 88, 0.2);
 }
 
+.input:read-only,
+.input[readonly] {
+    background: #eef2f0;
+    color: #31413a;
+    cursor: not-allowed;
+    border-color: rgba(16, 42, 35, 0.08);
+    box-shadow: none;
+}
+
+.input:read-only:focus,
+.input[readonly]:focus {
+    border-color: rgba(16, 42, 35, 0.08);
+    box-shadow: none;
+}
+
 .primaryButton {
     border: none;
     border-radius: 0.95rem;
@@ -255,6 +270,35 @@
     transform: translateY(-1px);
     box-shadow: 0 0.75rem 1.4rem rgba(0, 0, 0, 0.06);
     border-color: rgba(15, 157, 88, 0.2);
+}
+
+.secondaryButton:disabled {
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    color: var(--text-muted);
+    border-color: rgba(16, 42, 35, 0.1);
+    background: #eef3f0;
+}
+
+.blockedButton {
+    background: #eef3f0;
+    color: var(--text-muted);
+    border-color: rgba(16, 42, 35, 0.1);
+    box-shadow: none;
+}
+
+.blockedButton:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.deletedButton {
+    background: #f4f6f5;
+    color: var(--text-muted);
+    border-color: rgba(16, 42, 35, 0.12);
+    box-shadow: none;
+    cursor: not-allowed;
 }
 
 .infoPanel {
