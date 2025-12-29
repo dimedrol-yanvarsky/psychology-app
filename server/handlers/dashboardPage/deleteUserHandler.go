@@ -1,15 +1,12 @@
 package dashboardPage
 
 import (
-	"context"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+
+	"server/internal/dashboard"
 )
 
 type deleteUserRequest struct {
@@ -18,12 +15,8 @@ type deleteUserRequest struct {
 }
 
 // DeleteUserHandler обновляет статус пользователя на "Удален".
-func DeleteUserHandler(db *mongo.Database, c *gin.Context) {
-	if db == nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "База данных недоступна",
-		})
+func (h *Handlers) DeleteUserHandler(c *gin.Context) {
+	if !h.ensureService(c) {
 		return
 	}
 
@@ -37,107 +30,46 @@ func DeleteUserHandler(db *mongo.Database, c *gin.Context) {
 		return
 	}
 
-	input.AdminID = strings.TrimSpace(input.AdminID)
-	input.TargetUserID = strings.TrimSpace(input.TargetUserID)
-
-	if input.AdminID == "" || input.TargetUserID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"message": "Не переданы обязательные данные",
-		})
-		return
-	}
-
-	adminID, err := primitive.ObjectIDFromHex(input.AdminID)
+	updated, err := h.service.DeleteUser(strings.TrimSpace(input.AdminID), strings.TrimSpace(input.TargetUserID))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"message": "Некорректный идентификатор администратора",
-		})
-		return
-	}
-
-	targetID, err := primitive.ObjectIDFromHex(input.TargetUserID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"message": "Некорректный идентификатор пользователя",
-		})
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	usersCollection := db.Collection(userCollectionName)
-
-	var admin userDocument
-	if err := usersCollection.FindOne(ctx, bson.M{"_id": adminID}).Decode(&admin); err != nil {
-		if err == mongo.ErrNoDocuments {
+		switch err {
+		case dashboard.ErrInvalidInput:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  "error",
+				"message": "Не переданы обязательные данные",
+			})
+		case dashboard.ErrInvalidID:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  "error",
+				"message": "Некорректный идентификатор администратора или пользователя",
+			})
+		case dashboard.ErrNotFound:
 			c.JSON(http.StatusNotFound, gin.H{
 				"status":  "error",
-				"message": "Администратор не найден",
+				"message": "Пользователь не найден",
 			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "Ошибка обращения к базе данных",
-		})
-		return
-	}
-
-	if strings.TrimSpace(admin.Status) != adminStatus {
-		c.JSON(http.StatusForbidden, gin.H{
-			"status":  "error",
-			"message": "Недостаточно прав для удаления пользователей",
-		})
-		return
-	}
-
-	update := bson.M{"$set": bson.M{"status": "Удален"}}
-	result, err := usersCollection.UpdateOne(ctx, bson.M{"_id": targetID}, update)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "Не удалось обновить статус пользователя",
-		})
-		return
-	}
-
-	if result.MatchedCount == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"status":  "error",
-			"message": "Пользователь не найден",
-		})
-		return
-	}
-
-	var updated userDocument
-	if err := usersCollection.FindOne(ctx, bson.M{"_id": targetID}).Decode(&updated); err != nil {
-		if err == mongo.ErrNoDocuments {
-			c.JSON(http.StatusNotFound, gin.H{
+		case dashboard.ErrForbidden:
+			c.JSON(http.StatusForbidden, gin.H{
 				"status":  "error",
-				"message": "Пользователь не найден после обновления",
+				"message": "Недостаточно прав для удаления пользователей",
 			})
-			return
+		case dashboard.ErrDatabase:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "error",
+				"message": "Не удалось обновить статус пользователя",
+			})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "error",
+				"message": "Не удалось обновить статус пользователя",
+			})
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "Не удалось получить обновленный профиль",
-		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "Пользователь удален",
-		"user": userResponse{
-			ID:        updated.ID.Hex(),
-			FirstName: strings.TrimSpace(updated.FirstName),
-			LastName:  strings.TrimSpace(updated.LastName),
-			Email:     strings.TrimSpace(updated.Email),
-			Status:    "Удален",
-		},
+		"user":    toUserResponse(updated),
 	})
 }

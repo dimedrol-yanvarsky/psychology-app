@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Тестовые данные для OpenID Connect Google.
@@ -20,24 +19,11 @@ var googleTestAccount = Account{
 }
 
 // LoginWithGoogleHandler имитирует авторизацию через Google OpenID Connect.
-func LoginWithGoogleHandler(db *mongo.Database, c *gin.Context) {
-	_ = db
-	// Эмулируем успешное чтение записи пользователя из коллекции Account.
-	account := googleTestAccount
+func (h *Handlers) LoginWithGoogleHandler(c *gin.Context) {
+	_ = h
+	_ = googleTestAccount
 
-	c.JSON(http.StatusUnauthorized, gin.H{"error": "Авторизация временно невозможна"})
-
-	if account.Email == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "авторизация невозможна"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"firstName": account.FirstName,
-		"lastName":  account.LastName,
-		"email":     account.Email,
-		"status":    account.Status,
-		"redirect":  "/account",
-		"message":   "Авторизация через Google выполнена",
+	c.JSON(http.StatusUnauthorized, gin.H{
+		"error": "Авторизация временно невозможна",
 	})
 }

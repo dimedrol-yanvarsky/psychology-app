@@ -1,29 +1,6 @@
 package reviewsPage
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
-
-const (
-	reviewCollectionName = "Review"
-	userCollectionName   = "User"
-	statusDeleted        = "Удален"
-	statusModeration     = "Модерируется"
-	statusApproved       = "Добавлен"
-	statusDenied         = "Отклонен"
-)
-
-type reviewDocument struct {
-	ID         primitive.ObjectID `bson:"_id,omitempty"`
-	UserID     primitive.ObjectID `bson:"userId"`
-	ReviewBody string             `bson:"reviewBody"`
-	Date       string             `bson:"date"`
-	Status     string             `bson:"status"`
-}
-
-type userDocument struct {
-	ID        primitive.ObjectID `bson:"_id"`
-	FirstName string             `bson:"firstName"`
-	Status    string             `bson:"status"`
-}
+import "server/internal/reviews"
 
 type reviewResponse struct {
 	ID         string `json:"_id"`
@@ -55,4 +32,34 @@ type approveOrDenyRequest struct {
 	ReviewID string `json:"reviewId"`
 	AdminID  string `json:"adminId"`
 	Decision string `json:"decision"`
+}
+
+// Service описывает контракт бизнес-логики отзывов для хендлеров.
+type Service interface {
+	GetReviews() ([]reviews.ReviewItem, error)
+	CreateReview(input reviews.CreateReviewInput) (reviews.ReviewItem, error)
+	UpdateReview(input reviews.UpdateReviewInput) (reviews.ReviewItem, error)
+	DeleteReview(input reviews.DeleteReviewInput) error
+	ApproveOrDeny(input reviews.ApproveOrDenyInput) (reviews.ReviewItem, error)
+}
+
+// Handlers хранит зависимости для хендлеров отзывов.
+type Handlers struct {
+	service Service
+}
+
+// NewHandlers создает набор хендлеров отзывов.
+func NewHandlers(service Service) *Handlers {
+	return &Handlers{service: service}
+}
+
+func toResponse(item reviews.ReviewItem) reviewResponse {
+	return reviewResponse{
+		ID:         item.Review.ID.Hex(),
+		UserID:     item.Review.UserID.Hex(),
+		FirstName:  item.AuthorName,
+		ReviewBody: item.Review.ReviewBody,
+		Date:       item.Review.Date,
+		Status:     item.Review.Status,
+	}
 }

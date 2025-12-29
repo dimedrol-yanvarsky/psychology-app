@@ -1,19 +1,17 @@
 package loginPage
 
 import (
-	"context"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
+
+	"server/internal/user"
 )
 
 // LoginWithPasswordHandler обрабатывает форму email/пароль.
-func LoginWithPasswordHandler(db *mongo.Database, c *gin.Context) {
-	if db == nil {
+func (h *Handlers) LoginWithPasswordHandler(c *gin.Context) {
+	if h == nil || h.service == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "База данных недоступна"})
 		return
 	}
@@ -38,68 +36,36 @@ func LoginWithPasswordHandler(db *mongo.Database, c *gin.Context) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	collection := db.Collection("User")
-
-	cursor, err := collection.Find(ctx, bson.D{})
+	u, err := h.service.LoginWithPassword(email, password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка обращения к базе данных"})
-		return
-	}
-	defer cursor.Close(ctx)
-
-	var user User
-	found := false
-
-	for cursor.Next(ctx) {
-		var current User
-
-		if err := cursor.Decode(&current); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка обращения к базе данных"})
-			return
-		}
-
-		if strings.TrimSpace(strings.ToLower(current.Email)) == email {
-			user = current
-			found = true
-			break
-		}
-	}
-
-	if err := cursor.Err(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка обращения к базе данных"})
-		return
-	}
-
-	if !found {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Пользователь не найден"})
-		return
-	}
-
-	switch user.Status {
-	case "Администратор", "Пользователь":
-		if user.Password != password {
+		switch err {
+		case user.ErrInvalidInput, user.ErrInvalidEmail:
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Введите корректные данные"})
+		case user.ErrUserNotFound:
+			c.JSON(http.StatusNotFound, gin.H{"error": "Пользователь не найден"})
+		case user.ErrWrongPassword:
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Неверный пароль"})
-			return
+		case user.ErrUserDeleted:
+			c.JSON(http.StatusForbidden, gin.H{"error": "Пользователь удален. Обратитесь к администратору."})
+		case user.ErrUserBlocked:
+			c.JSON(http.StatusForbidden, gin.H{"error": "Пользователь заблокирован"})
+		case user.ErrDatabase:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка обращения к базе данных"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось выполнить авторизацию"})
 		}
-		c.JSON(http.StatusOK, gin.H{
-			"success":       "Авторизация успешна",
-			"id":            user.ID.Hex(),
-			"firstName":     user.FirstName,
-			"email":         user.Email,
-			"status":        user.Status,
-			"psychoType":    user.PsychoType,
-			"date":          user.Date,
-			"isGoogleAdded": user.IsGoogleAdded,
-			"isYandexAdded": user.IsYandexAdded,
-		})
-	case "Удален":
-		c.JSON(http.StatusForbidden, gin.H{"error": "Пользователь удален. Обратитесь к администратору."})
-	case "Заблокирован":
-		c.JSON(http.StatusForbidden, gin.H{"error": "Пользователь заблокирован"})
-	default:
-		c.JSON(http.StatusForbidden, gin.H{"error": "Пользователь не найден"})
+		return
 	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":       "Авторизация успешна",
+		"id":            u.ID.Hex(),
+		"firstName":     u.FirstName,
+		"email":         u.Email,
+		"status":        u.Status,
+		"psychoType":    u.PsychoType,
+		"date":          u.Date,
+		"isGoogleAdded": u.IsGoogleAdded,
+		"isYandexAdded": u.IsYandexAdded,
+	})
 }

@@ -1,6 +1,10 @@
 package loginPage
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	domainUser "server/internal/user"
+)
 
 // Account описывает учетку для OAuth-провайдеров.
 type Account struct {
@@ -29,4 +33,19 @@ type User struct {
 	Date          string             `bson:"date"`
 	IsGoogleAdded bool               `bson:"isGoogleAdded"`
 	IsYandexAdded bool               `bson:"isYandexAdded"`
+}
+
+// AuthService описывает контракт сервиса авторизации для хендлеров.
+type AuthService interface {
+	LoginWithPassword(email, password string) (domainUser.User, error)
+}
+
+// Handlers хранит зависимости для хендлеров авторизации.
+type Handlers struct {
+	service AuthService
+}
+
+// NewHandlers создает набор хендлеров авторизации.
+func NewHandlers(service AuthService) *Handlers {
+	return &Handlers{service: service}
 }

@@ -1,15 +1,12 @@
 package dashboardPage
 
 import (
-	"context"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+
+	"server/internal/dashboard"
 )
 
 type changeUserDataRequest struct {
@@ -19,12 +16,8 @@ type changeUserDataRequest struct {
 }
 
 // ChangeUserDataHandler обновляет имя (и, при наличии, фамилию) пользователя.
-func ChangeUserDataHandler(db *mongo.Database, c *gin.Context) {
-	if db == nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "База данных недоступна",
-		})
+func (h *Handlers) ChangeUserDataHandler(c *gin.Context) {
+	if !h.ensureService(c) {
 		return
 	}
 
@@ -38,84 +31,41 @@ func ChangeUserDataHandler(db *mongo.Database, c *gin.Context) {
 		return
 	}
 
-	input.UserID = strings.TrimSpace(input.UserID)
-	input.FirstName = strings.TrimSpace(input.FirstName)
-	input.LastName = strings.TrimSpace(input.LastName)
-
-	if input.UserID == "" || input.FirstName == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"message": "Не переданы обязательные данные",
-		})
-		return
-	}
-
-	userID, err := primitive.ObjectIDFromHex(input.UserID)
+	updated, err := h.service.ChangeUserData(strings.TrimSpace(input.UserID), strings.TrimSpace(input.FirstName), strings.TrimSpace(input.LastName))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "error",
-			"message": "Некорректный идентификатор пользователя",
-		})
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	usersCollection := db.Collection(userCollectionName)
-
-	updateFields := bson.M{
-		"firstName": input.FirstName,
-	}
-
-	if input.LastName != "" {
-		updateFields["lastName"] = input.LastName
-	}
-
-	update := bson.M{"$set": updateFields}
-
-	result, err := usersCollection.UpdateOne(ctx, bson.M{"_id": userID}, update)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "Не удалось обновить данные пользователя",
-		})
-		return
-	}
-
-	if result.MatchedCount == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"status":  "error",
-			"message": "Пользователь не найден",
-		})
-		return
-	}
-
-	var updated userDocument
-	if err := usersCollection.FindOne(ctx, bson.M{"_id": userID}).Decode(&updated); err != nil {
-		if err == mongo.ErrNoDocuments {
+		switch err {
+		case dashboard.ErrInvalidInput:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  "error",
+				"message": "Не переданы обязательные данные",
+			})
+		case dashboard.ErrInvalidID:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status":  "error",
+				"message": "Некорректный идентификатор пользователя",
+			})
+		case dashboard.ErrNotFound:
 			c.JSON(http.StatusNotFound, gin.H{
 				"status":  "error",
-				"message": "Пользователь не найден после обновления",
+				"message": "Пользователь не найден",
 			})
-			return
+		case dashboard.ErrDatabase:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "error",
+				"message": "Не удалось обновить данные пользователя",
+			})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status":  "error",
+				"message": "Не удалось обновить данные пользователя",
+			})
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "Не удалось получить обновленный профиль",
-		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "Данные профиля обновлены",
-		"user": userResponse{
-			ID:        updated.ID.Hex(),
-			FirstName: strings.TrimSpace(updated.FirstName),
-			LastName:  strings.TrimSpace(updated.LastName),
-			Email:     strings.TrimSpace(updated.Email),
-			Status:    strings.TrimSpace(updated.Status),
-		},
+		"user":    toUserResponse(updated),
 	})
 }

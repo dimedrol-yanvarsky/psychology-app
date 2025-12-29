@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Тестовые данные для OpenID Connect Yandex.
@@ -19,24 +18,11 @@ var yandexTestAccount = Account{
 }
 
 // LoginWithYandexHandler имитирует авторизацию через Yandex OpenID Connect.
-func LoginWithYandexHandler(db *mongo.Database, c *gin.Context) {
-	_ = db
+func (h *Handlers) LoginWithYandexHandler(c *gin.Context) {
+	_ = h
+	_ = yandexTestAccount
 
-	c.JSON(http.StatusUnauthorized, gin.H{"error": "Авторизация временно невозможна"})
-
-	account := yandexTestAccount
-
-	if account.Email == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "авторизация невозможна"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"firstName": account.FirstName,
-		"lastName":  account.LastName,
-		"email":     account.Email,
-		"status":    account.Status,
-		"redirect":  "/account",
-		"message":   "Авторизация через Yandex выполнена",
+	c.JSON(http.StatusUnauthorized, gin.H{
+		"error": "Авторизация временно невозможна",
 	})
 }
