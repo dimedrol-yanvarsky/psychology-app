@@ -3,7 +3,7 @@ import styles from "./LoginPage.module.css";
 import LoginCard from "./components/LoginCard";
 import LoginIntro from "./components/LoginIntro";
 import RecoveryModal from "./components/RecoveryModal";
-import { useLoginPage } from "../model/useLoginPage";
+import { useAuth } from "../../../features/auth";
 
 const LoginPage = ({ showAlert, setIsAdmin, setIsAuth, setProfileData }) => {
     const {
@@ -21,7 +21,7 @@ const LoginPage = ({ showAlert, setIsAdmin, setIsAuth, setProfileData }) => {
         setPassword,
         setRecoveryLogin,
         closeRecoveryModal,
-    } = useLoginPage({ showAlert, setIsAdmin, setIsAuth, setProfileData });
+    } = useAuth({ showAlert, setIsAdmin, setIsAuth, setProfileData });
 
     return (
         <div className={styles.page}>

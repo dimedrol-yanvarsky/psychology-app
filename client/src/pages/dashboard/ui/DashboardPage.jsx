@@ -11,7 +11,7 @@ import ProfileSection from "./components/ProfileSection";
 import PsychotypeSection from "./components/PsychotypeSection";
 import TerminalModal from "./components/TerminalModal";
 import TestModal from "./components/TestModal";
-import { useDashboardPage } from "../model/useDashboardPage";
+import { useDashboard } from "../../../features/dashboard";
 
 const DashboardPage = ({
     showAlert,
@@ -58,7 +58,7 @@ const DashboardPage = ({
         selectedAnswers,
         setTerminalOpen,
         showLinkButtons,
-    } = useDashboardPage({
+    } = useDashboard({
         showAlert,
         setIsAuth,
         setIsAdmin,

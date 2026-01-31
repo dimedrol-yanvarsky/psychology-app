@@ -1,6 +1,6 @@
 import React from "react";
 import styles from "./RecommendationsPage.module.css";
-import { useRecommendationsPage } from "../model/useRecommendationsPage";
+import { useRecommendationsList } from "../../../features/recommendations";
 
 const RecommendationsPage = ({ isAdmin, showAlert }) => {
     const {
@@ -23,7 +23,7 @@ const RecommendationsPage = ({ isAdmin, showAlert }) => {
         pending,
         sections,
         setEditingBlock,
-    } = useRecommendationsPage({ isAdmin, showAlert });
+    } = useRecommendationsList({ isAdmin, showAlert });
 
     const renderBlocks = () => {
         // Рендер списка блоков с учетом состояния загрузки и роли.

@@ -7,7 +7,7 @@ import {
 } from "react-router-dom";
 import { Header } from "../widgets/header";
 import { AlertMessage } from "../shared/ui/alert-message";
-import { createDefaultProfileData } from "../shared/model/profile";
+import { createDefaultProfileData } from "../entities/user";
 import { DashboardPage } from "../pages/dashboard";
 import { LoginPage } from "../pages/login";
 import { RecommendationsPage } from "../pages/recommendations";

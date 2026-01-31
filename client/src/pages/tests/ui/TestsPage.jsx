@@ -1,7 +1,7 @@
 import React from "react";
 import styles from "./TestsPage.module.css";
-import { useTestsPage } from "../model/useTestsPage";
-import { getOptionValue, getQuestionNumber } from "../lib/testUtils";
+import { useTestsList } from "../../../features/tests";
+import { getOptionValue, getQuestionNumber } from "../../../entities/test";
 
 const TestsPage = ({
     showAlert,
@@ -38,7 +38,7 @@ const TestsPage = ({
         toggleAnswer,
         updateAddQuestion,
         updateEditQuestion,
-    } = useTestsPage({ showAlert, profileData });
+    } = useTestsList({ showAlert, profileData });
 
     // Рендер списка тестов и состояния загрузки.
     const renderTestsContent = () => {

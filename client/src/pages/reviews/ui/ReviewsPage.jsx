@@ -1,6 +1,6 @@
 import React from "react";
 import styles from "./ReviewsPage.module.css";
-import { useReviewsPage } from "../model/useReviewsPage";
+import { useReviewsList } from "../../../features/reviews";
 
 const ReviewsPage = ({
     showAlert,
@@ -32,7 +32,7 @@ const ReviewsPage = ({
         showPosts,
         submitting,
         visibleReviews,
-    } = useReviewsPage({ showAlert, isAdmin, isAuth, profileData });
+    } = useReviewsList({ showAlert, isAdmin, isAuth, profileData });
 
     return (
         <div className={styles.page}>

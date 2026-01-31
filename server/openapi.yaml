@@ -1,0 +1,435 @@
+openapi: 3.0.3
+info:
+  title: API проекта ReactJS Gin Kurs
+  version: "1.0.0"
+  description: Только обработчики API.
+servers:
+  - url: http://localhost:8080/api
+
+paths:
+  /login/google:
+    post:
+      summary: Вход через Google (заглушка)
+      responses:
+        "401":
+          description: Авторизация недоступна
+
+  /login/yandex:
+    post:
+      summary: Вход через Яндекс (заглушка)
+      responses:
+        "401":
+          description: Авторизация недоступна
+
+  /login/password:
+    post:
+      summary: Вход по электронной почте и паролю
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Авторизация успешна
+        "400":
+          description: Некорректные данные
+        "401":
+          description: Неверный пароль
+        "403":
+          description: Пользователь заблокирован или удален
+        "404":
+          description: Пользователь не найден
+        "500":
+          description: Ошибка сервера
+
+  /login/lostPassword:
+    post:
+      summary: Восстановление пароля (заглушка)
+      responses:
+        "501":
+          description: Не реализовано
+
+  /dashboard/users:
+    post:
+      summary: Получить список пользователей для администратора
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Список пользователей
+        "400":
+          description: Некорректные данные
+        "403":
+          description: Доступ запрещен
+        "404":
+          description: Администратор не найден
+        "500":
+          description: Ошибка сервера
+
+  /dashboard/user-answers:
+    post:
+      summary: Получить ответы и вопросы по пройденному тесту
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Ответы и вопросы
+        "400":
+          description: Некорректные данные
+        "404":
+          description: Данные не найдены
+        "500":
+          description: Ошибка сервера
+
+  /dashboard/block-user:
+    post:
+      summary: Заблокировать пользователя
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Пользователь заблокирован
+        "400":
+          description: Некорректные данные
+        "403":
+          description: Доступ запрещен
+        "404":
+          description: Пользователь не найден
+        "500":
+          description: Ошибка сервера
+
+  /dashboard/delete-user:
+    post:
+      summary: Удалить пользователя (действие администратора)
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Пользователь удален
+        "400":
+          description: Некорректные данные
+        "403":
+          description: Доступ запрещен
+        "404":
+          description: Пользователь не найден
+        "500":
+          description: Ошибка сервера
+
+  /dashboard/delete-account:
+    post:
+      summary: Удалить текущий аккаунт
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Аккаунт удален
+        "400":
+          description: Некорректные данные
+        "404":
+          description: Пользователь не найден
+        "500":
+          description: Ошибка сервера
+
+  /dashboard/change-user-data:
+    post:
+      summary: Обновить данные профиля пользователя
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Данные пользователя обновлены
+        "400":
+          description: Некорректные данные
+        "404":
+          description: Пользователь не найден
+        "500":
+          description: Ошибка сервера
+
+  /dashboard/terminal:
+    post:
+      summary: Обработать команды терминала администратора
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Результат команды
+        "400":
+          description: Некорректные данные или команда
+
+  /reviews/getReviews:
+    get:
+      summary: Получить список отзывов
+      responses:
+        "200":
+          description: Список отзывов
+        "500":
+          description: Ошибка сервера
+
+  /reviews/createReview:
+    post:
+      summary: Создать отзыв
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Отзыв создан
+        "400":
+          description: Некорректные данные
+        "404":
+          description: Пользователь не найден
+        "409":
+          description: Отзыв уже существует
+        "500":
+          description: Ошибка сервера
+
+  /reviews/updateReview:
+    post:
+      summary: Обновить отзыв
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Отзыв обновлен
+        "400":
+          description: Некорректные данные
+        "403":
+          description: Доступ запрещен
+        "404":
+          description: Отзыв не найден
+        "500":
+          description: Ошибка сервера
+
+  /reviews/deleteReview:
+    post:
+      summary: Удалить отзыв
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Отзыв удален
+        "400":
+          description: Некорректные данные
+        "403":
+          description: Доступ запрещен
+        "404":
+          description: Отзыв не найден
+        "500":
+          description: Ошибка сервера
+
+  /reviews/approveOrDeny:
+    post:
+      summary: Одобрить или отклонить отзыв
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Статус отзыва обновлен
+        "400":
+          description: Некорректные данные
+        "403":
+          description: Доступ запрещен
+        "404":
+          description: Отзыв не найден
+        "500":
+          description: Ошибка сервера
+
+  /tests/getTests:
+    post:
+      summary: Получить опубликованные тесты
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Список тестов
+        "400":
+          description: Некорректные данные
+        "500":
+          description: Ошибка сервера
+
+  /tests/getQuestions:
+    post:
+      summary: Получить вопросы теста
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Список вопросов
+        "400":
+          description: Некорректные данные
+        "404":
+          description: Вопросы не найдены
+        "500":
+          description: Ошибка сервера
+
+  /tests/attemptTest:
+    post:
+      summary: Сохранить ответы попытки прохождения теста
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Попытка сохранена
+        "400":
+          description: Некорректные данные
+        "500":
+          description: Ошибка сервера
+
+  /tests/deleteTest:
+    post:
+      summary: Удалить тест
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Тест удален
+        "400":
+          description: Некорректные данные
+        "404":
+          description: Тест не найден
+        "500":
+          description: Ошибка сервера
+
+  /tests/changeTest:
+    post:
+      summary: Загрузить или обновить тест
+      description: При загрузке (или если действие не указано) сервер возвращает тест с вопросами. При обновлении сервер обновляет данные теста.
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Данные теста загружены или обновлены
+        "400":
+          description: Некорректные данные
+        "404":
+          description: Тест не найден
+        "500":
+          description: Ошибка сервера
+
+  /tests/addTest:
+    post:
+      summary: Создать новый тест
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Тест создан
+        "400":
+          description: Некорректные данные
+        "500":
+          description: Ошибка сервера
+
+  /recommendations/list:
+    get:
+      summary: Получить список рекомендаций
+      responses:
+        "200":
+          description: Список рекомендаций
+        "500":
+          description: Ошибка сервера
+
+  /recommendations/addBlock:
+    post:
+      summary: Добавить блок рекомендации
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Блок добавлен
+        "500":
+          description: Ошибка сервера
+
+  /recommendations/updateBlock:
+    post:
+      summary: Обновить блок рекомендации
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Блок обновлен
+        "400":
+          description: Некорректные данные
+        "404":
+          description: Блок не найден
+        "500":
+          description: Ошибка сервера
+
+  /recommendations/deleteBlock:
+    post:
+      summary: Удалить блок рекомендации
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Блок удален
+        "400":
+          description: Некорректные данные
+        "404":
+          description: Блок не найден
+        "500":
+          description: Ошибка сервера
+
+  /recommendations/addSection:
+    post:
+      summary: Добавить раздел рекомендаций
+      responses:
+        "200":
+          description: Раздел добавлен
+        "500":
+          description: Ошибка сервера
+
+  /recommendations/deleteSection:
+    post:
+      summary: Удалить раздел рекомендаций
+      requestBody:
+        required: true
+        content:
+          application/json: {}
+      responses:
+        "200":
+          description: Раздел удален
+        "400":
+          description: Некорректные данные
+        "404":
+          description: Раздел не найден
+        "500":
+          description: Ошибка сервера
