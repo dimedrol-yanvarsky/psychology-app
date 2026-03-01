@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useLockBodyScroll } from "../../../shared/lib/hooks/useLockBodyScroll";
 import { createDefaultProfileData } from "../../../entities/user";
@@ -11,6 +12,38 @@ import {
     fetchUserAnswers,
     fetchUsers,
 } from "../../../entities/session";
+import { useAuthContext } from "../../../shared/context/AuthContext";
+import { useAlertContext } from "../../../shared/context/AlertContext";
+import {
+    profileSaveStart,
+    profileSaveSuccess,
+    profileSaveError,
+    deleteAccountStart,
+    deleteAccountSuccess,
+    deleteAccountError,
+    adminListLoading,
+    adminListSuccess,
+    adminListError,
+    adminListReset,
+    blockUserStart,
+    blockUserEnd,
+    updateAccountStatus,
+    deleteUserStart,
+    deleteUserEnd,
+    openTestModal,
+    closeTestModal,
+    toggleTerminal,
+    setTerminalOpen,
+    closeTerminal,
+    openAnswersModal,
+    answersModalSuccess,
+    answersModalError,
+    closeAnswersModal,
+    completedTestsLoading,
+    completedTestsSuccess,
+    completedTestsError,
+    completedTestsReset,
+} from "./dashboardSlice";
 
 const DEFAULT_EMOTION_DATA = [
     { id: "calm", label: "Спокойствие", value: 72 },
@@ -19,47 +52,22 @@ const DEFAULT_EMOTION_DATA = [
     { id: "stress", label: "Стресс", value: 28 },
 ];
 
-export const useDashboard = ({
-    showAlert,
-    setIsAuth,
-    setIsAdmin,
-    isAdmin,
-    profileData,
-    setProfileData,
-}) => {
+export const useDashboard = () => {
+    const { isAdmin, profileData, setProfileData, setIsAuth, setIsAdmin } =
+        useAuthContext();
+    const { showAlert } = useAlertContext();
     const navigate = useNavigate();
-    const [user, setUser] = useState(null);
-    const [isTestModalOpen, setIsTestModalOpen] = useState(false);
-    const [isTerminalOpen, setIsTerminalOpen] = useState(false);
-    const [adminAccounts, setAdminAccounts] = useState([]);
-    const [isAdminListLoading, setIsAdminListLoading] = useState(
-        profileData?.status === "Администратор"
-    );
-    const [adminListError, setAdminListError] = useState("");
-    const [blockingUsers, setBlockingUsers] = useState({});
-    const [deletingUsers, setDeletingUsers] = useState({});
-    const [isDeletingAccount, setIsDeletingAccount] = useState(false);
-    const [isSavingProfile, setIsSavingProfile] = useState(false);
-    const [answersModal, setAnswersModal] = useState({
-        open: false,
-        loading: false,
-        error: "",
-        answers: [],
-        questions: [],
-        title: "",
-    });
-    const [completedTests, setCompletedTests] = useState([]);
-    const [isCompletedTestsLoading, setIsCompletedTestsLoading] =
-        useState(true);
-    const [completedTestsError, setCompletedTestsError] = useState("");
+    const reduxDispatch = useDispatch();
+
+    const state = useSelector((s) => s.dashboard);
 
     const selectedAnswers = useMemo(() => {
         const map = new Map();
-        if (!Array.isArray(answersModal.answers)) {
+        if (!Array.isArray(state.answersModal.answers)) {
             return map;
         }
 
-        answersModal.answers.forEach((item) => {
+        state.answersModal.answers.forEach((item) => {
             if (Array.isArray(item) && item.length > 1) {
                 const [qNumber, ...rest] = item;
                 const normalized = Number(qNumber);
@@ -73,18 +81,10 @@ export const useDashboard = ({
         });
 
         return map;
-    }, [answersModal.answers]);
+    }, [state.answersModal.answers]);
 
-    const providers = Array.isArray(user?.providers) ? user.providers : [];
-    const providerValue = user?.provider || profileData?.provider || "";
-    const hasGoogle =
-        providers.includes("google") ||
-        providerValue === "google" ||
-        Boolean(user?.googleLinked);
-    const hasYandex =
-        providers.includes("yandex") ||
-        providerValue === "yandex" ||
-        Boolean(user?.yandexLinked);
+    const hasGoogle = Boolean(profileData?.isGoogleAdded);
+    const hasYandex = Boolean(profileData?.isYandexAdded);
     const showLinkButtons = !hasGoogle || !hasYandex;
 
     const handleFieldChange = (field, value) => {
@@ -94,7 +94,7 @@ export const useDashboard = ({
     const handleProfileSave = async (event) => {
         event.preventDefault();
 
-        if (isSavingProfile) {
+        if (state.isSavingProfile) {
             return;
         }
 
@@ -102,27 +102,19 @@ export const useDashboard = ({
         const firstName = (profileData?.firstName || "").trim();
 
         if (!userId) {
-            showAlert &&
-                showAlert(
-                    "error",
-                    "Не указан идентификатор пользователя для обновления"
-                );
+            showAlert("error", "Не указан идентификатор пользователя для обновления");
             return;
         }
 
         if (!firstName) {
-            showAlert &&
-                showAlert("error", "Введите имя, чтобы сохранить изменения");
+            showAlert("error", "Введите имя, чтобы сохранить изменения");
             return;
         }
 
-        setIsSavingProfile(true);
+        reduxDispatch(profileSaveStart());
 
         try {
-            const { data } = await changeUserData({
-                userId,
-                firstName,
-            });
+            const { data } = await changeUserData({ userId, firstName });
 
             if (data?.status === "success") {
                 const updatedUser = data?.user || {};
@@ -135,41 +127,29 @@ export const useDashboard = ({
                     status: updatedUser.status || prev.status,
                 }));
 
-                setUser((prev) => ({
-                    ...(prev || {}),
-                    id: updatedUser.id || userId,
-                    firstName: updatedUser.firstName || firstName,
-                    email:
-                        updatedUser.email ||
-                        (prev && prev.email) ||
-                        profileData.email,
-                    status:
-                        updatedUser.status ||
-                        (prev && prev.status) ||
-                        profileData.status,
-                }));
+                reduxDispatch(
+                    profileSaveSuccess({
+                        user: {
+                            id: updatedUser.id || userId,
+                            firstName: updatedUser.firstName || firstName,
+                            email: updatedUser.email || profileData.email,
+                            status: updatedUser.status || profileData.status,
+                        },
+                    })
+                );
 
-                showAlert &&
-                    showAlert(
-                        "success",
-                        data?.message || "Данные профиля обновлены"
-                    );
+                showAlert("success", data?.message || "Данные профиля обновлены");
             } else {
-                showAlert &&
-                    showAlert(
-                        "error",
-                        data?.message || "Не удалось сохранить изменения"
-                    );
+                reduxDispatch(profileSaveError());
+                showAlert("error", data?.message || "Не удалось сохранить изменения");
             }
         } catch (error) {
+            reduxDispatch(profileSaveError());
             const message =
                 error?.response?.data?.message ||
                 error?.message ||
                 "Не удалось сохранить изменения";
-
-            showAlert && showAlert("error", message);
-        } finally {
-            setIsSavingProfile(false);
+            showAlert("error", message);
         }
     };
 
@@ -182,90 +162,88 @@ export const useDashboard = ({
     };
 
     const handleDeleteAccount = async () => {
-        if (isDeletingAccount) {
+        if (state.isDeletingAccount) {
             return;
         }
 
         if (!profileData?.id) {
-            showAlert &&
-                showAlert(
-                    "error",
-                    "Не указан идентификатор пользователя для удаления"
-                );
+            showAlert("error", "Не указан идентификатор пользователя для удаления");
             return;
         }
 
-        setIsDeletingAccount(true);
+        reduxDispatch(deleteAccountStart());
 
         try {
-            const { data } = await deleteAccount({
-                userId: profileData.id,
-            });
+            const { data } = await deleteAccount({ userId: profileData.id });
 
             if (data?.status === "success") {
+                reduxDispatch(deleteAccountSuccess());
                 setIsAdmin(false);
                 setIsAuth(false);
-                setUser(null);
                 setProfileData(createDefaultProfileData());
 
-                showAlert &&
-                    showAlert("success", data?.message || "Аккаунт удален");
-
+                showAlert("success", data?.message || "Аккаунт удален");
                 navigate(data?.redirect || "/login", { replace: true });
             } else {
-                showAlert &&
-                    showAlert(
-                        "error",
-                        data?.message || "Не удалось удалить аккаунт"
-                    );
+                reduxDispatch(deleteAccountError());
+                showAlert("error", data?.message || "Не удалось удалить аккаунт");
             }
         } catch (error) {
+            reduxDispatch(deleteAccountError());
             const message =
                 error?.response?.data?.message ||
                 error?.message ||
                 "Не удалось удалить аккаунт";
-
-            showAlert && showAlert("error", message);
-        } finally {
-            setIsDeletingAccount(false);
+            showAlert("error", message);
         }
     };
 
     const handleChangePassword = () => {
-        if (showAlert) {
-            showAlert(
-                "success",
-                "Мы отправим ссылку для смены пароля на вашу почту"
+        showAlert("success", "Мы отправим ссылку для смены пароля на вашу почту");
+    };
+
+    const handleLinkProvider = async (provider) => {
+        if (!profileData?.id) {
+            showAlert("error", "Пользователь не авторизован");
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `http://localhost:8080/api/auth/link/${provider}`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userId: profileData.id }),
+                }
             );
+
+            const data = await response.json();
+
+            if (data.redirectUrl) {
+                window.location.href = data.redirectUrl;
+            } else if (data.error) {
+                showAlert("error", data.error);
+            } else {
+                showAlert("error", "Не получен URL для авторизации");
+            }
+        } catch (error) {
+            showAlert("error", `Ошибка при привязке аккаунта ${provider}`);
         }
     };
 
-    const handleLinkProvider = (provider) => {
-        return showAlert(
-            "error",
-            `Привязка аккаунта ${provider} будет доступна позже`
-        );
-    };
-
     const handleStartTesting = () => {
-        setIsTestModalOpen(false);
+        reduxDispatch(closeTestModal());
         return showAlert("error", "Тестирование пока недоступно");
     };
 
     const handleAdminAction = (action, account) => {
-        return (
-            showAlert &&
-            showAlert("error", `${action} для ${account.email} недоступно`)
-        );
+        return showAlert("error", `${action} для ${account.email} недоступно`);
     };
 
     const handleBlockUser = async (account) => {
         if (!profileData?.id) {
-            showAlert &&
-                showAlert(
-                    "error",
-                    "Не указан идентификатор администратора для запроса"
-                );
+            showAlert("error", "Не указан идентификатор администратора для запроса");
             return;
         }
 
@@ -273,11 +251,7 @@ export const useDashboard = ({
         const status = (account?.status || "").trim();
 
         if (!targetId) {
-            showAlert &&
-                showAlert(
-                    "error",
-                    "Не удалось определить пользователя для блокировки"
-                );
+            showAlert("error", "Не удалось определить пользователя для блокировки");
             return;
         }
 
@@ -285,7 +259,7 @@ export const useDashboard = ({
             return;
         }
 
-        setBlockingUsers((prev) => ({ ...prev, [targetId]: true }));
+        reduxDispatch(blockUserStart(targetId));
 
         try {
             const { data } = await blockUser({
@@ -294,53 +268,33 @@ export const useDashboard = ({
             });
 
             if (data?.status === "success") {
-                setAdminAccounts((prev) =>
-                    prev.map((user) =>
-                        user.id === targetId
-                            ? {
-                                  ...user,
-                                  status: data?.user?.status || "Заблокирован",
-                              }
-                            : user
-                    )
+                reduxDispatch(
+                    updateAccountStatus({
+                        id: targetId,
+                        status: data?.user?.status || "Заблокирован",
+                    })
                 );
-
-                showAlert &&
-                    showAlert(
-                        "success",
-                        data?.message || "Пользователь заблокирован"
-                    );
+                showAlert("success", data?.message || "Пользователь заблокирован");
             } else {
-                showAlert &&
-                    showAlert(
-                        "error",
-                        data?.message ||
-                            "Не удалось заблокировать пользователя"
-                    );
+                showAlert(
+                    "error",
+                    data?.message || "Не удалось заблокировать пользователя"
+                );
             }
         } catch (error) {
             const message =
                 error?.response?.data?.message ||
                 error?.message ||
                 "Не удалось заблокировать пользователя";
-
-            showAlert && showAlert("error", message);
+            showAlert("error", message);
         } finally {
-            setBlockingUsers((prev) => {
-                const updated = { ...prev };
-                delete updated[targetId];
-                return updated;
-            });
+            reduxDispatch(blockUserEnd(targetId));
         }
     };
 
     const handleDeleteUser = async (account) => {
         if (!profileData?.id) {
-            showAlert &&
-                showAlert(
-                    "error",
-                    "Не указан идентификатор администратора для запроса"
-                );
+            showAlert("error", "Не указан идентификатор администратора для запроса");
             return;
         }
 
@@ -348,11 +302,7 @@ export const useDashboard = ({
         const status = (account?.status || "").trim();
 
         if (!targetId) {
-            showAlert &&
-                showAlert(
-                    "error",
-                    "Не удалось определить пользователя для удаления"
-                );
+            showAlert("error", "Не удалось определить пользователя для удаления");
             return;
         }
 
@@ -360,7 +310,7 @@ export const useDashboard = ({
             return;
         }
 
-        setDeletingUsers((prev) => ({ ...prev, [targetId]: true }));
+        reduxDispatch(deleteUserStart(targetId));
 
         try {
             const { data } = await deleteUser({
@@ -369,60 +319,46 @@ export const useDashboard = ({
             });
 
             if (data?.status === "success") {
-                setAdminAccounts((prev) =>
-                    prev.map((user) =>
-                        user.id === targetId
-                            ? {
-                                  ...user,
-                                  status: data?.user?.status || "Удален",
-                              }
-                            : user
-                    )
+                reduxDispatch(
+                    updateAccountStatus({
+                        id: targetId,
+                        status: data?.user?.status || "Удален",
+                    })
                 );
-
-                showAlert &&
-                    showAlert("success", data?.message || "Пользователь удален");
+                showAlert("success", data?.message || "Пользователь удален");
             } else {
-                showAlert &&
-                    showAlert(
-                        "error",
-                        data?.message || "Не удалось удалить пользователя"
-                    );
+                showAlert(
+                    "error",
+                    data?.message || "Не удалось удалить пользователя"
+                );
             }
         } catch (error) {
             const message =
                 error?.response?.data?.message ||
                 error?.message ||
                 "Не удалось удалить пользователя";
-
-            showAlert && showAlert("error", message);
+            showAlert("error", message);
         } finally {
-            setDeletingUsers((prev) => {
-                const updated = { ...prev };
-                delete updated[targetId];
-                return updated;
-            });
+            reduxDispatch(deleteUserEnd(targetId));
         }
     };
 
+    // Загрузка списка пользователей для админ-панели.
     useEffect(() => {
         if (profileData?.status !== "Администратор") {
-            setAdminAccounts([]);
-            setIsAdminListLoading(false);
-            setAdminListError("");
+            reduxDispatch(adminListReset());
             return;
         }
 
         if (!profileData?.id) {
-            setAdminAccounts([]);
-            setIsAdminListLoading(false);
-            setAdminListError("Не указан идентификатор пользователя");
+            reduxDispatch(
+                adminListError("Не указан идентификатор пользователя")
+            );
             return;
         }
 
         const fetchAdminUsers = async () => {
-            setIsAdminListLoading(true);
-            setAdminListError("");
+            reduxDispatch(adminListLoading());
 
             try {
                 const { data } = await fetchUsers({
@@ -431,13 +367,17 @@ export const useDashboard = ({
                 });
 
                 if (data?.status === "success") {
-                    setAdminAccounts(
-                        Array.isArray(data.users) ? data.users : []
+                    reduxDispatch(
+                        adminListSuccess(
+                            Array.isArray(data.users) ? data.users : []
+                        )
                     );
                 } else {
-                    setAdminAccounts([]);
-                    setAdminListError(
-                        data?.message || "Не удалось загрузить пользователей"
+                    reduxDispatch(
+                        adminListError(
+                            data?.message ||
+                                "Не удалось загрузить пользователей"
+                        )
                     );
                 }
             } catch (error) {
@@ -445,32 +385,24 @@ export const useDashboard = ({
                     error?.response?.data?.message ||
                     error?.message ||
                     "Ошибка загрузки пользователей";
-                setAdminAccounts([]);
-                setAdminListError(message);
-            } finally {
-                setIsAdminListLoading(false);
+                reduxDispatch(adminListError(message));
             }
         };
 
         fetchAdminUsers();
-    }, [profileData?.id, profileData?.status]);
+    }, [profileData?.id, profileData?.status, reduxDispatch]);
 
-    const openAnswersModal = async (test) => {
-        setAnswersModal({
-            open: true,
-            loading: true,
-            error: "",
-            answers: [],
-            questions: [],
-            title: test.testName || "Пройденный тест",
-        });
+    const handleOpenAnswersModal = async (test) => {
+        reduxDispatch(
+            openAnswersModal(test.testName || "Пройденный тест")
+        );
 
         if (!profileData?.id || !test?.id || !test?.testId) {
-            setAnswersModal((prev) => ({
-                ...prev,
-                loading: false,
-                error: "Недостаточно данных для загрузки результата",
-            }));
+            reduxDispatch(
+                answersModalError(
+                    "Недостаточно данных для загрузки результата"
+                )
+            );
             return;
         }
 
@@ -482,59 +414,48 @@ export const useDashboard = ({
             });
 
             if (data?.status === "success") {
-                setAnswersModal((prev) => ({
-                    ...prev,
-                    loading: false,
-                    answers: Array.isArray(data.answers) ? data.answers : [],
-                    questions: Array.isArray(data.questions)
-                        ? data.questions
-                        : [],
-                }));
+                reduxDispatch(
+                    answersModalSuccess({
+                        answers: Array.isArray(data.answers)
+                            ? data.answers
+                            : [],
+                        questions: Array.isArray(data.questions)
+                            ? data.questions
+                            : [],
+                    })
+                );
             } else {
-                setAnswersModal((prev) => ({
-                    ...prev,
-                    loading: false,
-                    error:
+                reduxDispatch(
+                    answersModalError(
                         data?.message ||
-                        "Не удалось загрузить ответы пользователя",
-                }));
+                            "Не удалось загрузить ответы пользователя"
+                    )
+                );
             }
         } catch (error) {
             const message =
                 error?.response?.data?.message ||
                 error?.message ||
                 "Ошибка загрузки ответов пользователя";
-            setAnswersModal((prev) => ({
-                ...prev,
-                loading: false,
-                error: message,
-            }));
+            reduxDispatch(answersModalError(message));
         }
     };
 
-    const closeAnswersModal = () => {
-        setAnswersModal({
-            open: false,
-            loading: false,
-            error: "",
-            answers: [],
-            questions: [],
-            title: "",
-        });
+    const handleCloseAnswersModal = () => {
+        reduxDispatch(closeAnswersModal());
     };
 
-    useLockBodyScroll(answersModal.open);
+    useLockBodyScroll(state.answersModal.open);
 
+    // Загрузка пройденных тестов.
     useEffect(() => {
         if (!profileData?.id) {
-            setIsCompletedTestsLoading(false);
-            setCompletedTests([]);
+            reduxDispatch(completedTestsReset());
             return;
         }
 
         const loadCompletedTests = async () => {
-            setIsCompletedTestsLoading(true);
-            setCompletedTestsError("");
+            reduxDispatch(completedTestsLoading());
 
             try {
                 const { data } = await fetchCompletedTests({
@@ -542,14 +463,17 @@ export const useDashboard = ({
                 });
 
                 if (data?.status === "success") {
-                    setCompletedTests(
-                        Array.isArray(data.tests) ? data.tests : []
+                    reduxDispatch(
+                        completedTestsSuccess(
+                            Array.isArray(data.tests) ? data.tests : []
+                        )
                     );
                 } else {
-                    setCompletedTests([]);
-                    setCompletedTestsError(
-                        data?.message ||
-                            "Не удалось загрузить список пройденных тестов"
+                    reduxDispatch(
+                        completedTestsError(
+                            data?.message ||
+                                "Не удалось загрузить список пройденных тестов"
+                        )
                     );
                 }
             } catch (error) {
@@ -557,35 +481,62 @@ export const useDashboard = ({
                     error?.response?.data?.message ||
                     error?.message ||
                     "Ошибка загрузки пройденных тестов";
-                setCompletedTests([]);
-                setCompletedTestsError(message);
-            } finally {
-                setIsCompletedTestsLoading(false);
+                reduxDispatch(completedTestsError(message));
             }
         };
 
         loadCompletedTests();
-    }, [profileData?.id]);
+    }, [profileData?.id, reduxDispatch]);
+
+    // Обработка OAuth linking callback.
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const linkGoogle = urlParams.get("linkGoogle");
+        const linkYandex = urlParams.get("linkYandex");
+        const message = urlParams.get("message");
+
+        if (linkGoogle !== null) {
+            const success = linkGoogle === "true";
+
+            if (success && message) {
+                showAlert("success", decodeURIComponent(message));
+                setProfileData((prev) => ({ ...prev, isGoogleAdded: true }));
+            } else if (message) {
+                showAlert("error", decodeURIComponent(message));
+            }
+
+            window.history.replaceState({}, document.title, "/account");
+        }
+
+        if (linkYandex !== null) {
+            const success = linkYandex === "true";
+
+            if (success && message) {
+                showAlert("success", decodeURIComponent(message));
+                setProfileData((prev) => ({ ...prev, isYandexAdded: true }));
+            } else if (message) {
+                showAlert("error", decodeURIComponent(message));
+            }
+
+            window.history.replaceState({}, document.title, "/account");
+        }
+    }, [showAlert, setProfileData]);
 
     const handleToggleTerminal = () => {
-        setIsTerminalOpen((prev) => !prev);
+        reduxDispatch(toggleTerminal());
     };
 
-    const openTestModal = () => setIsTestModalOpen(true);
-    const closeTestModal = () => setIsTestModalOpen(false);
-    const closeTerminal = () => setIsTerminalOpen(false);
-
     return {
-        adminAccounts,
-        adminListError,
-        answersModal,
-        blockingUsers,
-        closeAnswersModal,
-        closeTerminal,
-        closeTestModal,
-        completedTests,
-        completedTestsError,
-        deletingUsers,
+        adminAccounts: state.adminAccounts,
+        adminListError: state.adminListError,
+        answersModal: state.answersModal,
+        blockingUsers: state.blockingUsers,
+        closeAnswersModal: handleCloseAnswersModal,
+        closeTerminal: () => reduxDispatch(closeTerminal()),
+        closeTestModal: () => reduxDispatch(closeTestModal()),
+        completedTests: state.completedTests,
+        completedTestsError: state.completedTestsError,
+        deletingUsers: state.deletingUsers,
         emotionData: DEFAULT_EMOTION_DATA,
         handleAdminAction,
         handleBlockUser,
@@ -601,17 +552,17 @@ export const useDashboard = ({
         hasGoogle,
         hasYandex,
         isAdmin,
-        isAdminListLoading,
-        isCompletedTestsLoading,
-        isDeletingAccount,
-        isSavingProfile,
-        isTerminalOpen,
-        isTestModalOpen,
-        openAnswersModal,
-        openTestModal,
+        isAdminListLoading: state.isAdminListLoading,
+        isCompletedTestsLoading: state.isCompletedTestsLoading,
+        isDeletingAccount: state.isDeletingAccount,
+        isSavingProfile: state.isSavingProfile,
+        isTerminalOpen: state.isTerminalOpen,
+        isTestModalOpen: state.isTestModalOpen,
+        openAnswersModal: handleOpenAnswersModal,
+        openTestModal: () => reduxDispatch(openTestModal()),
         profileData,
         selectedAnswers,
-        setTerminalOpen: setIsTerminalOpen,
+        setTerminalOpen: (value) => reduxDispatch(setTerminalOpen(value)),
         showLinkButtons,
     };
 };

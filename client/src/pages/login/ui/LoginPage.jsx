@@ -5,7 +5,7 @@ import LoginIntro from "./components/LoginIntro";
 import RecoveryModal from "./components/RecoveryModal";
 import { useAuth } from "../../../features/auth";
 
-const LoginPage = ({ showAlert, setIsAdmin, setIsAuth, setProfileData }) => {
+const LoginPage = () => {
     const {
         email,
         handleOAuth,
@@ -21,7 +21,7 @@ const LoginPage = ({ showAlert, setIsAdmin, setIsAuth, setProfileData }) => {
         setPassword,
         setRecoveryLogin,
         closeRecoveryModal,
-    } = useAuth({ showAlert, setIsAdmin, setIsAuth, setProfileData });
+    } = useAuth();
 
     return (
         <div className={styles.page}>

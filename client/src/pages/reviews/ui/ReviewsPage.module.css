@@ -399,6 +399,37 @@
   color: var(--green-primary);
 }
 
+@media (max-width: 85.375rem) {
+  .main {
+    max-width: 60rem;
+  }
+
+  .form {
+    max-width: 40rem;
+    padding: 1.25rem 1.25rem 1rem;
+  }
+
+  .formTitle {
+    font-size: 1.1rem;
+  }
+
+  .field {
+    width: 90%;
+    max-width: 90%;
+  }
+
+  .submitButton {
+    width: 90%;
+    max-width: 90%;
+  }
+
+  .field input,
+  .field textarea {
+    font-size: 0.825rem;
+    padding: 0.55rem 0.65rem;
+  }
+}
+
 @media (min-width: 56.25rem) {
   .main {
     flex-direction: column;

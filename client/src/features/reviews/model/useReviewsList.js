@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import {
     createReview,
     decideReview,
@@ -6,6 +7,26 @@ import {
     getReviews,
     updateReview,
 } from "../../../entities/review";
+import { useAuthContext } from "../../../shared/context/AuthContext";
+import { useAlertContext } from "../../../shared/context/AlertContext";
+import {
+    fetchReviewsStart,
+    fetchReviewsSuccess,
+    fetchReviewsError,
+    setFormText,
+    submitStart,
+    submitEnd,
+    addReview,
+    setHasSubmitted,
+    setShowPosts,
+    startEdit,
+    cancelEdit,
+    setEditingText,
+    setReviewLoading,
+    clearReviewLoading,
+    removeReview,
+    setReviews,
+} from "./reviewsSlice";
 
 const STATUS_MODERATING = "Модерируется";
 const STATUS_APPROVED = "Добавлен";
@@ -15,37 +36,16 @@ const getReviewId = (review) => review?._id || review?.id || "";
 const getAuthorId = (review) => review?.userID || review?.userId || "";
 const getReviewBody = (review) => review?.reviewBody || review?.text || "";
 
-export const useReviewsList = ({
-    showAlert,
-    isAdmin = false,
-    isAuth = false,
-    profileData = {},
-}) => {
-    const [reviews, setReviews] = useState([]);
-    const [form, setForm] = useState({ text: "" });
-    const [submitting, setSubmitting] = useState(false);
-    const [hasSubmitted, setHasSubmitted] = useState(false);
-    const [showPosts, setShowPosts] = useState(false);
-    const [editingReviewId, setEditingReviewId] = useState("");
-    const [editingText, setEditingText] = useState("");
-    const [loadingIds, setLoadingIds] = useState({});
-    const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+export const useReviewsList = () => {
+    const { isAdmin, isAuth, profileData } = useAuthContext();
+    const { showAlert } = useAlertContext();
+    const reduxDispatch = useDispatch();
+
+    const state = useSelector((s) => s.reviews);
 
     const currentUserId = (profileData?.id || "").trim();
 
-    const setReviewLoading = (reviewId, value) => {
-        setLoadingIds((prev) => {
-            const next = { ...prev };
-            if (value) {
-                next[reviewId] = true;
-            } else {
-                delete next[reviewId];
-            }
-            return next;
-        });
-    };
-
-    const isReviewLoading = (reviewId) => Boolean(loadingIds[reviewId]);
+    const isReviewLoading = (reviewId) => Boolean(state.loadingIds[reviewId]);
 
     const filterVisibleReviews = useCallback(
         (list) =>
@@ -61,50 +61,49 @@ export const useReviewsList = ({
     );
 
     const fetchReviews = useCallback(async () => {
-        setIsLoadingReviews(true);
+        reduxDispatch(fetchReviewsStart());
         try {
             const response = await getReviews();
             const loadedReviews = Array.isArray(response?.data?.reviews)
                 ? response.data.reviews
                 : [];
-            setReviews(loadedReviews);
+            reduxDispatch(fetchReviewsSuccess(loadedReviews));
         } catch (error) {
             console.error("Не удалось загрузить отзывы", error);
+            reduxDispatch(fetchReviewsError());
             showAlert?.(
                 "error",
                 error?.response?.data?.message ||
                     "Не удалось загрузить отзывы"
             );
-        } finally {
-            setIsLoadingReviews(false);
         }
-    }, [showAlert]);
+    }, [showAlert, reduxDispatch]);
 
     useEffect(() => {
         fetchReviews();
     }, [fetchReviews]);
 
     useEffect(() => {
-        const visible = filterVisibleReviews(reviews);
-        setShowPosts(visible.length > 0);
+        const visible = filterVisibleReviews(state.reviews);
+        reduxDispatch(setShowPosts(visible.length > 0));
 
         if (isAuth && currentUserId) {
-            const userHasReview = reviews.some(
+            const userHasReview = state.reviews.some(
                 (review) => getAuthorId(review) === currentUserId
             );
-            setHasSubmitted(userHasReview);
+            reduxDispatch(setHasSubmitted(userHasReview));
         } else {
-            setHasSubmitted(false);
+            reduxDispatch(setHasSubmitted(false));
         }
-    }, [reviews, filterVisibleReviews, isAuth, currentUserId]);
+    }, [state.reviews, filterVisibleReviews, isAuth, currentUserId, reduxDispatch]);
 
     const handleChange = (event) => {
-        setForm({ text: event.target.value });
+        reduxDispatch(setFormText(event.target.value));
     };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-        if (submitting) return;
+        if (state.submitting) return;
 
         if (!isAuth) {
             showAlert?.("error", "Авторизуйтесь, чтобы оставить отзыв");
@@ -116,13 +115,13 @@ export const useReviewsList = ({
             return;
         }
 
-        const body = form.text.trim();
+        const body = state.form.text.trim();
         if (!body) {
             showAlert?.("error", "Заполните текст отзыва");
             return;
         }
 
-        setSubmitting(true);
+        reduxDispatch(submitStart());
         try {
             const response = await createReview({
                 userId: currentUserId,
@@ -130,8 +129,7 @@ export const useReviewsList = ({
             });
 
             if (response?.data?.review) {
-                setReviews((prev) => [response.data.review, ...prev]);
-                setForm({ text: "" });
+                reduxDispatch(addReview(response.data.review));
                 showAlert?.("success", "Отзыв отправлен на модерацию");
             }
         } catch (error) {
@@ -141,7 +139,7 @@ export const useReviewsList = ({
                     "Произошла ошибка при отправке отзыва. Попробуйте ещё раз."
             );
         } finally {
-            setSubmitting(false);
+            reduxDispatch(submitEnd());
         }
     };
 
@@ -149,7 +147,7 @@ export const useReviewsList = ({
         const reviewId = getReviewId(review);
         if (!reviewId) return;
 
-        setReviewLoading(reviewId, true);
+        reduxDispatch(setReviewLoading(reviewId));
         try {
             await deleteReview({
                 reviewId,
@@ -157,9 +155,7 @@ export const useReviewsList = ({
                 isAdmin,
             });
 
-            setReviews((prev) =>
-                prev.filter((item) => getReviewId(item) !== reviewId)
-            );
+            reduxDispatch(removeReview(reviewId));
             showAlert?.("success", "Отзыв удален");
         } catch (error) {
             showAlert?.(
@@ -167,7 +163,7 @@ export const useReviewsList = ({
                 error?.response?.data?.message || "Не удалось удалить отзыв"
             );
         } finally {
-            setReviewLoading(reviewId, false);
+            reduxDispatch(clearReviewLoading(reviewId));
         }
     };
 
@@ -178,7 +174,7 @@ export const useReviewsList = ({
             return;
         }
 
-        setReviewLoading(reviewId, true);
+        reduxDispatch(setReviewLoading(reviewId));
 
         try {
             const response = await decideReview({
@@ -188,11 +184,13 @@ export const useReviewsList = ({
             });
 
             if (response?.data?.review) {
-                setReviews((prev) =>
-                    prev.map((item) =>
-                        getReviewId(item) === reviewId
-                            ? { ...item, ...response.data.review }
-                            : item
+                reduxDispatch(
+                    setReviews(
+                        state.reviews.map((item) =>
+                            getReviewId(item) === reviewId
+                                ? { ...item, ...response.data.review }
+                                : item
+                        )
                     )
                 );
                 showAlert?.(
@@ -209,20 +207,20 @@ export const useReviewsList = ({
                     "Не удалось обновить статус отзыва"
             );
         } finally {
-            setReviewLoading(reviewId, false);
+            reduxDispatch(clearReviewLoading(reviewId));
         }
     };
 
     const handleStartEdit = (review) => {
         const reviewId = getReviewId(review);
         if (!reviewId) return;
-        setEditingReviewId(reviewId);
-        setEditingText(getReviewBody(review));
+        reduxDispatch(
+            startEdit({ id: reviewId, text: getReviewBody(review) })
+        );
     };
 
     const handleCancelEdit = () => {
-        setEditingReviewId("");
-        setEditingText("");
+        reduxDispatch(cancelEdit());
     };
 
     const handleSaveEdit = async (reviewId) => {
@@ -232,13 +230,13 @@ export const useReviewsList = ({
             return;
         }
 
-        const body = editingText.trim();
+        const body = state.editingText.trim();
         if (!body) {
             showAlert?.("error", "Введите текст отзыва");
             return;
         }
 
-        setReviewLoading(reviewId, true);
+        reduxDispatch(setReviewLoading(reviewId));
 
         try {
             const response = await updateReview({
@@ -248,11 +246,13 @@ export const useReviewsList = ({
             });
 
             if (response?.data?.review) {
-                setReviews((prev) =>
-                    prev.map((item) =>
-                        getReviewId(item) === reviewId
-                            ? { ...item, ...response.data.review }
-                            : item
+                reduxDispatch(
+                    setReviews(
+                        state.reviews.map((item) =>
+                            getReviewId(item) === reviewId
+                                ? { ...item, ...response.data.review }
+                                : item
+                        )
                     )
                 );
                 showAlert?.("success", "Отзыв обновлен");
@@ -264,7 +264,7 @@ export const useReviewsList = ({
                 error?.response?.data?.message || "Не удалось обновить отзыв"
             );
         } finally {
-            setReviewLoading(reviewId, false);
+            reduxDispatch(clearReviewLoading(reviewId));
         }
     };
 
@@ -289,8 +289,8 @@ export const useReviewsList = ({
     };
 
     const visibleReviews = useMemo(
-        () => filterVisibleReviews(reviews),
-        [filterVisibleReviews, reviews]
+        () => filterVisibleReviews(state.reviews),
+        [filterVisibleReviews, state.reviews]
     );
 
     return {
@@ -298,9 +298,9 @@ export const useReviewsList = ({
         STATUS_MODERATING,
         STATUS_APPROVED,
         currentUserId,
-        editingReviewId,
-        editingText,
-        form,
+        editingReviewId: state.editingReviewId,
+        editingText: state.editingText,
+        form: state.form,
         formatDate,
         getAuthorId,
         getReviewBody,
@@ -312,12 +312,12 @@ export const useReviewsList = ({
         handleSaveEdit,
         handleStartEdit,
         handleSubmit,
-        hasSubmitted,
-        isLoadingReviews,
+        hasSubmitted: state.hasSubmitted,
+        isLoadingReviews: state.isLoadingReviews,
         isReviewLoading,
-        setEditingText,
-        showPosts,
-        submitting,
+        setEditingText: (text) => reduxDispatch(setEditingText(text)),
+        showPosts: state.showPosts,
+        submitting: state.submitting,
         visibleReviews,
     };
 };

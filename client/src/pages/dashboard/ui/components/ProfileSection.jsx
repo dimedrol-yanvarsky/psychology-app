@@ -107,25 +107,35 @@ const ProfileSection = ({
                     <div className={styles.infoPanel}>
                         <div className={styles.infoRow}>
                             <span className={styles.infoLabel}>
-                                Привязать аккаунт
+                                Привязанные аккаунты
                             </span>
                         </div>
                         <div className={styles.connectRow}>
-                            {!hasGoogle && (
+                            {hasGoogle ? (
+                                <div className={styles.linkedAccount}>
+                                    <img src={logoGoogle} alt="Google" width="24" height="24" />
+                                    <span>Аккаунт Google уже привязан</span>
+                                </div>
+                            ) : (
                                 <Button
                                     type="button"
                                     className={styles.oauthButton}
-                                    onClick={() => onLinkProvider("Google")}
+                                    onClick={() => onLinkProvider("google")}
                                 >
                                     <img src={logoGoogle} alt="Google" />
                                     <span>Привязать аккаунт Google</span>
                                 </Button>
                             )}
-                            {!hasYandex && (
+                            {hasYandex ? (
+                                <div className={styles.linkedAccount}>
+                                    <img src={logoYandex} alt="Yandex" width="24" height="24" />
+                                    <span>Аккаунт Яндекс уже привязан</span>
+                                </div>
+                            ) : (
                                 <Button
                                     type="button"
                                     className={styles.oauthButton}
-                                    onClick={() => onLinkProvider("Яндекс")}
+                                    onClick={() => onLinkProvider("yandex")}
                                 >
                                     <img src={logoYandex} alt="Yandex" />
                                     <span>Привязать аккаунт Яндекс</span>

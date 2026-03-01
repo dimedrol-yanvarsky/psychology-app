@@ -2,13 +2,11 @@ import React from "react";
 import styles from "./TestsPage.module.css";
 import { useTestsList } from "../../../features/tests";
 import { getOptionValue, getQuestionNumber } from "../../../entities/test";
+import { useAuthContext } from "../../../shared/context";
 
-const TestsPage = ({
-    showAlert,
-    isAdmin = false,
-    isAuth,
-    profileData = {},
-}) => {
+const TestsPage = () => {
+    const { isAdmin, isAuth } = useAuthContext();
+
     const {
         addModal,
         addEditOption,
@@ -38,7 +36,7 @@ const TestsPage = ({
         toggleAnswer,
         updateAddQuestion,
         updateEditQuestion,
-    } = useTestsList({ showAlert, profileData });
+    } = useTestsList();
 
     // Рендер списка тестов и состояния загрузки.
     const renderTestsContent = () => {

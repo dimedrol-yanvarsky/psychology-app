@@ -12,15 +12,11 @@ import PsychotypeSection from "./components/PsychotypeSection";
 import TerminalModal from "./components/TerminalModal";
 import TestModal from "./components/TestModal";
 import { useDashboard } from "../../../features/dashboard";
+import { useAuthContext } from "../../../shared/context";
 
-const DashboardPage = ({
-    showAlert,
-    setIsAuth,
-    setIsAdmin,
-    isAdmin,
-    profileData,
-    setProfileData,
-}) => {
+const DashboardPage = () => {
+    const { profileData } = useAuthContext();
+
     const {
         adminAccounts,
         adminListError,
@@ -58,14 +54,7 @@ const DashboardPage = ({
         selectedAnswers,
         setTerminalOpen,
         showLinkButtons,
-    } = useDashboard({
-        showAlert,
-        setIsAuth,
-        setIsAdmin,
-        isAdmin,
-        profileData,
-        setProfileData,
-    });
+    } = useDashboard();
 
     return (
         <div className={styles.page}>
@@ -129,7 +118,6 @@ const DashboardPage = ({
             <TerminalModal
                 isOpen={isTerminalOpen}
                 onClose={closeTerminal}
-                profileData={profileData}
                 setIsTerminalOpen={setTerminalOpen}
             />
 

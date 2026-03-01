@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginWithPassword, loginWithProvider } from "../api/authApi";
+import { useAuthContext } from "../../../shared/context/AuthContext";
+import { useAlertContext } from "../../../shared/context/AlertContext";
 
-export const useAuth = ({
-    showAlert,
-    setIsAdmin,
-    setIsAuth,
-    setProfileData,
-}) => {
+export const useAuth = () => {
+    const { setIsAdmin, setIsAuth, setProfileData } = useAuthContext();
+    const { showAlert } = useAlertContext();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -19,18 +18,41 @@ export const useAuth = ({
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get("token");
+        const oauthStatus = urlParams.get("oauth");
         const error = urlParams.get("error");
 
-        if (token) {
-            localStorage.setItem("token", token);
-            window.location.href = "/account";
+        // Обработка OAuth callback
+        if (oauthStatus === "success") {
+            // Получаем данные пользователя из URL параметров
+            const userData = {
+                id: urlParams.get("id"),
+                firstName: urlParams.get("firstName"),
+                email: urlParams.get("email"),
+                status: urlParams.get("status"),
+                psychoType: urlParams.get("psychoType"),
+                date: urlParams.get("date"),
+                isGoogleAdded: urlParams.get("isGoogleAdded") === "true",
+                isYandexAdded: urlParams.get("isYandexAdded") === "true",
+            };
+
+            // Устанавливаем данные пользователя
+            setProfileData(userData);
+            setIsAuth(true);
+            setIsAdmin(userData.status === "Администратор");
+
+            // Очищаем URL от параметров
+            window.history.replaceState({}, document.title, "/account");
+
+            showAlert("success", "Авторизация успешна");
+            navigate("/account");
         }
 
-        if (error) {
-            showAlert("error", `Ошибка авторизации: ${error}`);
+        if (oauthStatus === "error" && error) {
+            showAlert("error", `Ошибка OAuth: ${decodeURIComponent(error)}`);
+            // Очищаем URL от параметров ошибки
+            window.history.replaceState({}, document.title, "/login");
         }
-    }, []);
+    }, [navigate, setIsAdmin, setIsAuth, setProfileData, showAlert]);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -82,13 +104,29 @@ export const useAuth = ({
                 return;
             }
 
-            showAlert("success", "Авторизация выполнена");
-            navigate("/account");
+            // Получаем URL для редиректа от сервера
+            if (data.redirectUrl) {
+                // Редиректим на OAuth провайдер (Google или Яндекс)
+                window.location.href = data.redirectUrl;
+            } else {
+                showAlert("error", "Не получен URL для авторизации");
+            }
         } catch (error) {
-            showAlert(
-                "error",
-                `Авторизация через ${provider} временно невозможна`
-            );
+            const errorMessage = error?.response?.data?.error;
+
+            if (errorMessage) {
+                showAlert("error", errorMessage);
+            } else if (error?.response?.status === 503) {
+                showAlert(
+                    "error",
+                    `Авторизация через ${provider} не настроена на сервере`
+                );
+            } else {
+                showAlert(
+                    "error",
+                    `Авторизация через ${provider} временно невозможна`
+                );
+            }
         }
     };
 

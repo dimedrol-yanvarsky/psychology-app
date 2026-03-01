@@ -1,13 +1,10 @@
 import React from "react";
 import styles from "./ReviewsPage.module.css";
 import { useReviewsList } from "../../../features/reviews";
+import { useAuthContext } from "../../../shared/context";
 
-const ReviewsPage = ({
-    showAlert,
-    isAdmin = false,
-    isAuth = false,
-    profileData = {},
-}) => {
+const ReviewsPage = () => {
+    const { isAuth, isAdmin } = useAuthContext();
     const {
         STATUS_MODERATING,
         currentUserId,
@@ -32,7 +29,7 @@ const ReviewsPage = ({
         showPosts,
         submitting,
         visibleReviews,
-    } = useReviewsList({ showAlert, isAdmin, isAuth, profileData });
+    } = useReviewsList();
 
     return (
         <div className={styles.page}>

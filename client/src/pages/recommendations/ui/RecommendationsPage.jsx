@@ -1,8 +1,10 @@
 import React from "react";
 import styles from "./RecommendationsPage.module.css";
 import { useRecommendationsList } from "../../../features/recommendations";
+import { useAuthContext } from "../../../shared/context";
 
-const RecommendationsPage = ({ isAdmin, showAlert }) => {
+const RecommendationsPage = () => {
+    const { isAdmin } = useAuthContext();
     const {
         TEXT_MODE_OPTIONS,
         blockStyle,
@@ -23,7 +25,7 @@ const RecommendationsPage = ({ isAdmin, showAlert }) => {
         pending,
         sections,
         setEditingBlock,
-    } = useRecommendationsList({ isAdmin, showAlert });
+    } = useRecommendationsList();
 
     const renderBlocks = () => {
         // Рендер списка блоков с учетом состояния загрузки и роли.

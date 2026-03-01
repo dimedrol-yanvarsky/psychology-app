@@ -4,7 +4,7 @@ import RegistrationCard from "./components/RegistrationCard";
 import RegistrationIntro from "./components/RegistrationIntro";
 import { useRegistration } from "../../../features/auth";
 
-const RegistrationPage = ({ showAlert }) => {
+const RegistrationPage = () => {
     const {
         handleGeneratePassword,
         handleSubmit,
@@ -16,7 +16,7 @@ const RegistrationPage = ({ showAlert }) => {
         setName,
         setPassword,
         setPasswordRepeated,
-    } = useRegistration({ showAlert });
+    } = useRegistration();
 
     return (
         <div className={styles.page}>

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import {
     addBlock,
     addSection,
@@ -7,6 +8,21 @@ import {
     fetchRecommendations,
     updateBlock,
 } from "../../../entities/recommendation";
+import { useAuthContext } from "../../../shared/context/AuthContext";
+import { useAlertContext } from "../../../shared/context/AlertContext";
+import {
+    loadStart,
+    loadSuccess,
+    setSections,
+    setCurrentPage,
+    startEdit,
+    cancelEdit,
+    setEditingBlock,
+    setPendingFlag,
+    setBlockPending,
+    clearBlockPending,
+    updateBlockInSection,
+} from "./recommendationsSlice";
 
 const TEXT_MODE_OPTIONS = [
     { value: "base", label: "Aa", title: "Обычный стиль" },
@@ -95,67 +111,56 @@ const blockStyle = (mode = "base") => {
     }
 };
 
-export const useRecommendationsList = ({ isAdmin, showAlert }) => {
-    const [sections, setSections] = useState([]);
-    const [currentPage, setCurrentPage] = useState(0);
-    const [editingBlock, setEditingBlock] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [pending, setPending] = useState({
-        addSection: false,
-        addBlock: false,
-        deleteSection: false,
-        blocks: {},
-    });
+export const useRecommendationsList = () => {
+    const { isAdmin } = useAuthContext();
+    const { showAlert } = useAlertContext();
+    const reduxDispatch = useDispatch();
+
+    const state = useSelector((s) => s.recommendations);
 
     const currentSection = useMemo(
-        () => sections[currentPage] || null,
-        [sections, currentPage]
+        () => state.sections[state.currentPage] || null,
+        [state.sections, state.currentPage]
     );
 
-    const setPendingFlag = (key, value) =>
-        setPending((prev) => ({ ...prev, [key]: value }));
+    const isBlockPending = (blockId) =>
+        Boolean(state.pending.blocks[blockId]);
 
-    const setBlockPending = useCallback((blockId, value) => {
-        if (!blockId) return;
-        setPending((prev) => {
-            const nextBlocks = { ...prev.blocks };
-            if (value) {
-                nextBlocks[blockId] = true;
-            } else {
-                delete nextBlocks[blockId];
-            }
-            return { ...prev, blocks: nextBlocks };
-        });
-    }, []);
+    const applyRecommendations = useCallback(
+        (list, preferredType = "") => {
+            const grouped = groupRecommendations(list);
+            reduxDispatch(setSections(grouped));
 
-    const isBlockPending = (blockId) => Boolean(pending.blocks[blockId]);
-
-    const applyRecommendations = useCallback((list, preferredType = "") => {
-        const grouped = groupRecommendations(list);
-        setSections(grouped);
-
-        if (grouped.length === 0) {
-            setCurrentPage(0);
-            return;
-        }
-
-        if (preferredType) {
-            const idx = grouped.findIndex(
-                (section) => section.recommendationType === preferredType
-            );
-            if (idx !== -1) {
-                setCurrentPage(idx);
+            if (grouped.length === 0) {
+                reduxDispatch(setCurrentPage(0));
                 return;
             }
-        }
 
-        setCurrentPage((prev) =>
-            Math.min(prev, Math.max(grouped.length - 1, 0))
-        );
-    }, []);
+            if (preferredType) {
+                const idx = grouped.findIndex(
+                    (section) =>
+                        section.recommendationType === preferredType
+                );
+                if (idx !== -1) {
+                    reduxDispatch(setCurrentPage(idx));
+                    return;
+                }
+            }
+
+            reduxDispatch(
+                setCurrentPage(
+                    Math.min(
+                        state.currentPage,
+                        Math.max(grouped.length - 1, 0)
+                    )
+                )
+            );
+        },
+        [state.currentPage, reduxDispatch]
+    );
 
     const loadRecommendations = useCallback(async () => {
-        setIsLoading(true);
+        reduxDispatch(loadStart());
         try {
             const { data } = await fetchRecommendations();
             const list = Array.isArray(data?.recommendations)
@@ -167,11 +172,11 @@ export const useRecommendationsList = ({ isAdmin, showAlert }) => {
                 error?.response?.data?.message ||
                 "Не удалось загрузить рекомендации";
             showAlert?.("error", message);
-            setSections([]);
+            reduxDispatch(setSections([]));
         } finally {
-            setIsLoading(false);
+            reduxDispatch(loadSuccess());
         }
-    }, [applyRecommendations, showAlert]);
+    }, [applyRecommendations, showAlert, reduxDispatch]);
 
     useEffect(() => {
         loadRecommendations();
@@ -179,58 +184,51 @@ export const useRecommendationsList = ({ isAdmin, showAlert }) => {
 
     const handleStartEdit = (block, sectionType) => {
         if (!isAdmin) return;
-        setEditingBlock({
-            id: block.id,
-            sectionType,
-            draftText: block.recommendationText,
-            draftMode: block.textMode || "base",
-        });
+        reduxDispatch(
+            startEdit({
+                id: block.id,
+                sectionType,
+                draftText: block.recommendationText,
+                draftMode: block.textMode || "base",
+            })
+        );
     };
 
     const handleSaveBlock = async () => {
-        if (!editingBlock) return;
+        if (!state.editingBlock) return;
 
-        const text = editingBlock.draftText.trim();
+        const text = state.editingBlock.draftText.trim();
         if (!text) {
             showAlert?.("error", "Заполните текст рекомендации");
             return;
         }
 
-        setBlockPending(editingBlock.id, true);
+        reduxDispatch(setBlockPending(state.editingBlock.id));
         try {
             const { data } = await updateBlock({
-                id: editingBlock.id,
+                id: state.editingBlock.id,
                 recommendationText: text,
-                textMode: editingBlock.draftMode || "base",
+                textMode: state.editingBlock.draftMode || "base",
             });
 
             const updated = normalizeRecommendation(
                 data?.block || {
-                    _id: editingBlock.id,
+                    _id: state.editingBlock.id,
                     recommendationText: text,
-                    recommendationType: editingBlock.sectionType,
-                    textMode: editingBlock.draftMode,
+                    recommendationType: state.editingBlock.sectionType,
+                    textMode: state.editingBlock.draftMode,
                 }
             );
 
-            setSections((prev) =>
-                prev.map((section) =>
-                    section.recommendationType === editingBlock.sectionType
-                        ? {
-                              ...section,
-                              blocks: section.blocks.map((block) =>
-                                  block.id === editingBlock.id
-                                      ? {
-                                            ...block,
-                                            recommendationText:
-                                                updated.recommendationText,
-                                            textMode: updated.textMode,
-                                        }
-                                      : block
-                              ),
-                          }
-                        : section
-                )
+            reduxDispatch(
+                updateBlockInSection({
+                    sectionType: state.editingBlock.sectionType,
+                    blockId: state.editingBlock.id,
+                    updates: {
+                        recommendationText: updated.recommendationText,
+                        textMode: updated.textMode,
+                    },
+                })
             );
 
             showAlert?.("success", data?.message || "Блок обновлен");
@@ -240,15 +238,17 @@ export const useRecommendationsList = ({ isAdmin, showAlert }) => {
                 "Не удалось обновить блок";
             showAlert?.("error", message);
         } finally {
-            setBlockPending(editingBlock.id, false);
-            setEditingBlock(null);
+            reduxDispatch(clearBlockPending(state.editingBlock.id));
+            reduxDispatch(cancelEdit());
         }
     };
 
     const handleAddSection = async () => {
         if (!isAdmin) return;
 
-        setPendingFlag("addSection", true);
+        reduxDispatch(
+            setPendingFlag({ field: "addSection", value: true })
+        );
         try {
             const { data } = await addSection();
             const list = Array.isArray(data?.recommendations)
@@ -256,7 +256,7 @@ export const useRecommendationsList = ({ isAdmin, showAlert }) => {
                 : [];
             const newType =
                 data?.block?.recommendationType ||
-                `Страница ${sections.length + 1}`;
+                `Страница ${state.sections.length + 1}`;
             applyRecommendations(list, newType);
             showAlert?.("success", data?.message || "Добавлен новый раздел");
         } catch (error) {
@@ -265,15 +265,19 @@ export const useRecommendationsList = ({ isAdmin, showAlert }) => {
                 "Не удалось добавить раздел";
             showAlert?.("error", message);
         } finally {
-            setPendingFlag("addSection", false);
-            setEditingBlock(null);
+            reduxDispatch(
+                setPendingFlag({ field: "addSection", value: false })
+            );
+            reduxDispatch(cancelEdit());
         }
     };
 
     const handleAddBlock = async () => {
         if (!isAdmin || !currentSection) return;
 
-        setPendingFlag("addBlock", true);
+        reduxDispatch(
+            setPendingFlag({ field: "addBlock", value: true })
+        );
         try {
             const { data } = await addBlock({
                 recommendationType: currentSection.recommendationType,
@@ -292,15 +296,17 @@ export const useRecommendationsList = ({ isAdmin, showAlert }) => {
                 "Не удалось добавить блок";
             showAlert?.("error", message);
         } finally {
-            setPendingFlag("addBlock", false);
-            setEditingBlock(null);
+            reduxDispatch(
+                setPendingFlag({ field: "addBlock", value: false })
+            );
+            reduxDispatch(cancelEdit());
         }
     };
 
     const handleDeleteBlock = async (block, sectionType) => {
         if (!isAdmin || !block?.id) return;
 
-        setBlockPending(block.id, true);
+        reduxDispatch(setBlockPending(block.id));
         try {
             const { data } = await deleteBlock({
                 id: block.id,
@@ -317,9 +323,9 @@ export const useRecommendationsList = ({ isAdmin, showAlert }) => {
                 "Не удалось удалить блок";
             showAlert?.("error", message);
         } finally {
-            setBlockPending(block.id, false);
-            if (editingBlock?.id === block.id) {
-                setEditingBlock(null);
+            reduxDispatch(clearBlockPending(block.id));
+            if (state.editingBlock?.id === block.id) {
+                reduxDispatch(cancelEdit());
             }
         }
     };
@@ -327,7 +333,9 @@ export const useRecommendationsList = ({ isAdmin, showAlert }) => {
     const handleDeleteSection = async () => {
         if (!isAdmin || !currentSection) return;
 
-        setPendingFlag("deleteSection", true);
+        reduxDispatch(
+            setPendingFlag({ field: "deleteSection", value: true })
+        );
         const nextPageNumber = Math.max(
             1,
             getPageNumber(currentSection.recommendationType) - 1
@@ -350,25 +358,27 @@ export const useRecommendationsList = ({ isAdmin, showAlert }) => {
                 "Не удалось удалить раздел";
             showAlert?.("error", message);
         } finally {
-            setPendingFlag("deleteSection", false);
-            setEditingBlock(null);
+            reduxDispatch(
+                setPendingFlag({ field: "deleteSection", value: false })
+            );
+            reduxDispatch(cancelEdit());
         }
     };
 
-    const handleCancelEdit = () => setEditingBlock(null);
+    const handleCancelEdit = () => reduxDispatch(cancelEdit());
 
     const handlePageChange = (index) => {
-        setEditingBlock(null);
-        setCurrentPage(index);
+        reduxDispatch(cancelEdit());
+        reduxDispatch(setCurrentPage(index));
     };
 
     return {
         DEFAULT_BLOCK_TEXT,
         TEXT_MODE_OPTIONS,
         blockStyle,
-        currentPage,
+        currentPage: state.currentPage,
         currentSection,
-        editingBlock,
+        editingBlock: state.editingBlock,
         getPageNumber,
         handleAddBlock,
         handleAddSection,
@@ -379,9 +389,9 @@ export const useRecommendationsList = ({ isAdmin, showAlert }) => {
         handleSaveBlock,
         handleStartEdit,
         isBlockPending,
-        isLoading,
-        pending,
-        sections,
-        setEditingBlock,
+        isLoading: state.isLoading,
+        pending: state.pending,
+        sections: state.sections,
+        setEditingBlock: (payload) => reduxDispatch(setEditingBlock(payload)),
     };
 };

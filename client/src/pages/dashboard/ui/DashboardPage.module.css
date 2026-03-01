@@ -365,6 +365,19 @@
     background: #f7fbf8;
 }
 
+.linkedAccount {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.9rem;
+    border: 1px solid rgba(15, 157, 88, 0.2);
+    background: rgba(15, 157, 88, 0.05);
+    color: var(--green-primary);
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
 .actionsRow {
     display: flex;
     flex-direction: column;
@@ -528,7 +541,7 @@
 
 .emotionRow {
     display: grid;
-    grid-template-columns: 140px 1fr 60px;
+    grid-template-columns: clamp(80px, 12vw, 140px) 1fr clamp(36px, 5vw, 60px);
     align-items: center;
     gap: 0.65rem;
 }
@@ -851,6 +864,48 @@
 @keyframes spin {
     to {
         transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 1366px) {
+    .page {
+        padding: 1.75rem 1.25rem 2.25rem;
+    }
+
+    .layout {
+        gap: 1.25rem;
+    }
+
+    .title {
+        font-size: 1.55rem;
+    }
+
+    .heroCard,
+    .profileCard,
+    .psychotypeCard,
+    .adminPanel {
+        padding: 1.35rem;
+    }
+
+    .cardTitle {
+        font-size: 1.1rem;
+    }
+
+    .quickGrid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .adminUserCard {
+        grid-template-columns: minmax(180px, 1fr) 4fr;
+    }
+
+    .answersModal {
+        width: min(48rem, 95vw);
+    }
+
+    .terminalModal {
+        width: min(64rem, 95vw);
     }
 }
 

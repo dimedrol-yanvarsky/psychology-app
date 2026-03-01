@@ -571,6 +571,36 @@
   }
 }
 
+@media (max-width: 85.375rem) {
+  .main {
+    max-width: 60rem;
+  }
+
+  .title {
+    font-size: 1.45rem;
+  }
+
+  .answersModal {
+    width: min(46rem, 95vw);
+  }
+
+  .formModal {
+    width: min(42rem, 95vw);
+  }
+
+  .testCard {
+    padding: 0.875rem 1rem 0.75rem;
+  }
+
+  .testTitle {
+    font-size: 0.975rem;
+  }
+
+  .testSummary {
+    font-size: 0.875rem;
+  }
+}
+
 @media (max-width: 48rem) {
   .page {
     padding: 1.125rem;

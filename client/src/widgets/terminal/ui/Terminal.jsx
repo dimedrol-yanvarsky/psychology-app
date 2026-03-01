@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { API_BASE_URL } from "../../../shared/config/api";
+import { useAuthContext } from "../../../shared/context/AuthContext";
 import styles from "./Terminal.module.css";
 
 const themeOptions = [
@@ -10,7 +11,8 @@ const themeOptions = [
 
 const dashboardApiBase = `${API_BASE_URL}/api/dashboard`;
 
-const Terminal = ({ profileData, setIsTerminalOpen }) => {
+const Terminal = ({ setIsTerminalOpen }) => {
+    const { profileData } = useAuthContext();
     const [activeTheme, setActiveTheme] = useState("light");
     const [commandInput, setCommandInput] = useState("");
     const [isSending, setIsSending] = useState(false);

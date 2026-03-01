@@ -1,9 +1,9 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import styles from "./Header.module.css";
-import logo from "../../../shared/assets/images/logo.png"; // Предполагается, что логотип лежит в папке assets
+import logo from "../../../shared/assets/images/logo.png";
 
-const Header = ({ isAuth }) => {
+const Header = () => {
     const location = useLocation();
 
     const isActive = (path) => {

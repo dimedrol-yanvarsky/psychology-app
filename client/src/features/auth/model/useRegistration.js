@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { generateStrongPassword } from "../lib/passwordGenerator";
 import { createAccount } from "../api/authApi";
+import { useAlertContext } from "../../../shared/context/AlertContext";
 
-export const useRegistration = ({ showAlert }) => {
+export const useRegistration = () => {
+    const { showAlert } = useAlertContext();
     const [login, setLogin] = useState("");
     const [name, setName] = useState("");
     const [password, setPassword] = useState("");
